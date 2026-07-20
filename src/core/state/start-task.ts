@@ -18,7 +18,7 @@ import {
 import { serializeActiveState } from "./serialize-active-state.js";
 import { generateTaskId } from "./task-id.js";
 import type { ActiveTask } from "./types.js";
-import { agentNameSchema, taskTitleSchema } from "./value-schemas.js";
+import { agentNameSchema, objectiveSchema, taskTitleSchema } from "./value-schemas.js";
 
 interface BaseTaskStartPlan {
   readonly diagnostics: readonly Diagnostic[];
@@ -40,6 +40,7 @@ export interface ReadyTaskStartPlan extends BaseTaskStartPlan {
 export interface TerminalTaskStartPlan extends BaseTaskStartPlan {
   readonly status:
     | "invalid-title"
+    | "invalid-objective"
     | "invalid-agent"
     | "invalid-context"
     | "invalid-state"
@@ -55,10 +56,12 @@ export interface PrepareTaskStartDependencies {
   readonly gitRepositoryLocator: GitRepositoryLocator;
   readonly gitInspector: GitInspector;
   readonly now?: () => Date;
+  readonly startDirectory?: string;
 }
 
 export interface PrepareTaskStartInput {
   readonly title: string;
+  readonly objective?: string;
   readonly agent?: string;
 }
 
@@ -131,9 +134,24 @@ export async function prepareTaskStart(
     ]);
   }
 
+  const objectiveResult = objectiveSchema.safeParse(input.objective ?? titleResult.data);
+  if (!objectiveResult.success) {
+    return terminal("invalid-objective", 2, [
+      {
+        code: "AFS010",
+        severity: "error",
+        message: "Task objective must contain 1 to 4,000 characters after trimming.",
+        suggestion: "Provide a concise engineering objective without transcripts or secrets.",
+      },
+    ]);
+  }
+
   const contextResult = await loadCanonicalContext({
     fileSystem: dependencies.fileSystem,
     gitRepositoryLocator: dependencies.gitRepositoryLocator,
+    ...(dependencies.startDirectory === undefined
+      ? {}
+      : { startDirectory: dependencies.startDirectory }),
   });
   if (contextResult.status === "error") {
     return terminal(
@@ -173,7 +191,8 @@ export async function prepareTaskStart(
       dependencies.gitInspector.readWorkingFacts(repositoryRoot),
       existingHistoryTaskIds(dependencies.fileSystem, repositoryRoot),
     ]);
-    const workingDirectory = dependencies.fileSystem.currentWorkingDirectory();
+    const workingDirectory =
+      dependencies.startDirectory ?? dependencies.fileSystem.currentWorkingDirectory();
     const taskId = generateTaskId(now, historyTaskIds);
     const agent = agentResult?.success === true ? agentResult.data : undefined;
     const timestamp = now.toISOString();
@@ -192,7 +211,7 @@ export async function prepareTaskStart(
       ...(agent === undefined ? {} : { startingAgent: agent, lastAgent: agent }),
       reportRevision: 0,
       latestReportAt: null,
-      objective: titleResult.data,
+      objective: objectiveResult.data,
       completed: [],
       inProgress: [],
       decisions: [],

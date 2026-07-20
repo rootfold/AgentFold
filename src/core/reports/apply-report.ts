@@ -26,9 +26,13 @@ export interface ReadyReportPlan extends BaseReportPlan {
   readonly exitCode: 0;
   readonly repositoryRoot: string;
   readonly statePath: string;
+  readonly taskId: string;
   readonly report: AgentReport;
   readonly summary: ReportMergeSummary;
   readonly redactionCount: number;
+  readonly previousRevision: number;
+  readonly newRevision: number;
+  readonly changed: boolean;
   readonly serializedState: string;
 }
 
@@ -51,6 +55,7 @@ export interface PrepareAgentReportDependencies {
   readonly gitRepositoryLocator: GitRepositoryLocator;
   readonly gitInspector: GitInspector;
   readonly now?: () => Date;
+  readonly startDirectory?: string;
 }
 
 export interface PrepareAgentReportInput {
@@ -83,6 +88,9 @@ export async function prepareAgentReport(
   const contextResult = await loadCanonicalContext({
     fileSystem: dependencies.fileSystem,
     gitRepositoryLocator: dependencies.gitRepositoryLocator,
+    ...(dependencies.startDirectory === undefined
+      ? {}
+      : { startDirectory: dependencies.startDirectory }),
   });
   if (contextResult.status === "error") {
     return terminal(
@@ -212,9 +220,13 @@ export async function prepareAgentReport(
       exitCode: 0,
       repositoryRoot,
       statePath: path.join(repositoryRoot, ".agentfold", "state", "current.md"),
+      taskId: loadedState.state.taskId,
       report: redaction.value,
       summary: merged.summary,
       redactionCount: redaction.redactionCount,
+      previousRevision: loadedState.state.reportRevision,
+      newRevision: merged.state.reportRevision,
+      changed: merged.state.reportRevision !== loadedState.state.reportRevision,
       serializedState: serializeActiveState(merged.state),
       diagnostics,
     };

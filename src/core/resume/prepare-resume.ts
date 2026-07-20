@@ -24,6 +24,7 @@ import type { ResumeFormat, ResumePacket, ResumeTarget } from "./types.js";
 export interface PrepareResumeDependencies {
   readonly fileSystem: FileSystem;
   readonly gitRepositoryLocator: GitRepositoryLocator;
+  readonly startDirectory?: string;
 }
 
 export interface PrepareResumeInput {
@@ -154,6 +155,9 @@ export async function prepareResume(
   const contextResult = await loadCanonicalContext({
     fileSystem: dependencies.fileSystem,
     gitRepositoryLocator: dependencies.gitRepositoryLocator,
+    ...(dependencies.startDirectory === undefined
+      ? {}
+      : { startDirectory: dependencies.startDirectory }),
   });
   if (contextResult.status === "error") {
     return terminal(

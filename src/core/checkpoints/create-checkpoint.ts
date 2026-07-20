@@ -81,6 +81,7 @@ export interface PrepareCheckpointDependencies {
   readonly gitRepositoryLocator: GitRepositoryLocator;
   readonly gitInspector: GitInspector;
   readonly now?: () => Date;
+  readonly startDirectory?: string;
 }
 
 export interface PrepareCheckpointInput {
@@ -199,6 +200,9 @@ export async function prepareCheckpoint(
   const contextResult = await loadCanonicalContext({
     fileSystem: dependencies.fileSystem,
     gitRepositoryLocator: dependencies.gitRepositoryLocator,
+    ...(dependencies.startDirectory === undefined
+      ? {}
+      : { startDirectory: dependencies.startDirectory }),
   });
   if (contextResult.status === "error") {
     return terminal(

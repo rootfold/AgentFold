@@ -7,6 +7,7 @@ import { packageVersion } from "../package-metadata.js";
 import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerMcpCommand } from "./commands/mcp.js";
 import { registerReportCommand } from "./commands/report.js";
 import { registerResumeCommand } from "./commands/resume.js";
 import { registerStartCommand } from "./commands/start.js";
@@ -21,6 +22,7 @@ export interface CreateProgramOptions {
   readonly output: CliOutput;
   readonly now?: () => Date;
   readonly version?: string;
+  readonly runMcpServer?: Parameters<typeof registerMcpCommand>[1]["runServer"];
 }
 
 export function createProgram(options: CreateProgramOptions): Command {
@@ -55,6 +57,18 @@ export function createProgram(options: CreateProgramOptions): Command {
   registerReportCommand(program, options, options.output);
   registerCheckpointCommand(program, options, options.output);
   registerResumeCommand(program, options, options.output);
+  registerMcpCommand(
+    program,
+    {
+      fileSystem: options.fileSystem,
+      gitRepositoryLocator: options.gitRepositoryLocator,
+      gitInspector: options.gitInspector,
+      version: options.version ?? packageVersion,
+      ...(options.now === undefined ? {} : { now: options.now }),
+      ...(options.runMcpServer === undefined ? {} : { runServer: options.runMcpServer }),
+    },
+    options.output,
+  );
 
   return program;
 }

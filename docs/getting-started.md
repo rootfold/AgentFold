@@ -1,6 +1,6 @@
 # Getting started
 
-AgentFold currently supports safe initialization, canonical project diagnostics, active-task reports, and immutable checkpoints. Run it from any directory inside an existing Git repository.
+AgentFold currently supports safe initialization, canonical project diagnostics, active-task reports, immutable checkpoints, continuation packets, and a local MCP boundary. Run it from any directory inside an existing Git repository.
 
 ## Preview initialization
 
@@ -165,3 +165,15 @@ Resume follows active-state checkpoint metadata and validates the selected immut
 Markdown is intended for pasting into a fresh coding-agent session. JSON contains the same bounded `ResumePacket` data for future integrations, with diagnostics kept on standard error. Target options add only a display and instruction-file hint; they do not generate or modify agent instructions. Relative output paths are resolved from the repository root, parent directories may be created inside that boundary, and existing files are never overwritten. A mismatched output extension produces a warning but the requested filename is preserved.
 
 The continuation packet asks the receiving agent to submit concise structured conclusions before ending. Future work may automate report and checkpoint invocation, but resume itself has no adapters, managed processes, watchers, Git hooks, network calls, or model integration.
+
+## Run the local MCP server
+
+Start one stdio MCP process for the containing Git repository:
+
+```bash
+pnpm agentfold mcp --workspace .
+```
+
+The server lets a compatible host open a session, read bounded context, begin a task, report progress, checkpoint, resume, and close the session through the same validated core used by the CLI commands. It has no network listener and writes protocol messages only to standard output. Safe debug lifecycle messages are available with `--debug` on standard error.
+
+See [Local MCP integration](integrations/mcp.md) for the tool lifecycle, generic manual configuration examples, security boundary, and current limitations. No application-specific configuration is installed automatically.

@@ -34,6 +34,30 @@ describe("AgentFold CLI", () => {
     expect(captured.stdout()).toContain("start");
     expect(captured.stdout()).toContain("report");
     expect(captured.stdout()).toContain("checkpoint");
+    expect(captured.stdout()).toContain("mcp");
+    expect(captured.stderr()).toBe("");
+  });
+
+  it("registers MCP options without printing a normal CLI banner during server operation", async () => {
+    const captured = captureOutput();
+    let workspace: string | undefined;
+    let debug = false;
+    const exitCode = await runCli(
+      ["node", "agentfold", "mcp", "--workspace", "workspace with spaces", "--debug"],
+      {
+        output: captured.output,
+        runMcpServer: (input) => {
+          workspace = input.workspace;
+          debug = input.debug ?? false;
+          return Promise.resolve(0);
+        },
+      },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(workspace).toBe("workspace with spaces");
+    expect(debug).toBe(true);
+    expect(captured.stdout()).toBe("");
     expect(captured.stderr()).toBe("");
   });
 

@@ -197,8 +197,9 @@ AgentFold does not need access to an agent's private conversation. Instead, it s
 
 ## Quick start
 
-The currently implemented safe initialization workflow is documented in
-[docs/getting-started.md](docs/getting-started.md).
+The currently implemented workflow is documented in
+[docs/getting-started.md](docs/getting-started.md), including the local stdio
+[MCP integration](docs/integrations/mcp.md).
 
 ### Initialize AgentFold
 

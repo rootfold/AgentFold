@@ -69,3 +69,13 @@ export type {
 } from "./core/resume/types.js";
 export { scanRepositoryMetadata } from "./core/scanners/repository-metadata.js";
 export type { RepositoryMetadata } from "./core/scanners/types.js";
+export { createAgentFoldMcpServer } from "./integrations/mcp/create-mcp-server.js";
+export type { CreateAgentFoldMcpServerInput } from "./integrations/mcp/create-mcp-server.js";
+export type { AgentFoldMcpApplicationContext } from "./integrations/mcp/mcp-context.js";
+export type { AgentFoldMcpResult } from "./integrations/mcp/mcp-response.js";
+export type {
+  AgentFoldMcpSession,
+  AgentFoldMcpSessionRegistry,
+} from "./integrations/mcp/session-registry.js";
+export { agentFoldMcpToolNames } from "./integrations/mcp/tool-names.js";
+export type { AgentFoldMcpToolName } from "./integrations/mcp/tool-names.js";
