@@ -1,4 +1,5 @@
 import type { AgentFoldConfig } from "../config/types.js";
+import { resolveAutomationPolicy } from "../config/automation-policy.js";
 import type { Diagnostic } from "../diagnostics/diagnostic.js";
 import type { CanonicalContextDocuments, CanonicalProjectContext } from "./types.js";
 
@@ -35,6 +36,7 @@ export function resolveCanonicalContext(
       excludedPaths: config.safety.excluded_paths,
     },
     state: config.state,
+    automation: resolveAutomationPolicy(config.automation),
     enabledAdapters: enabledAdapters(config.adapters),
     diagnostics,
   };

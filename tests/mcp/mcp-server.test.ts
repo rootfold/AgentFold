@@ -141,6 +141,7 @@ describe("AgentFold MCP server", () => {
         logger: { debug: () => undefined, error: () => undefined },
         signalSource: signals,
         transport: serverTransport,
+        serviceMode: "disabled",
       });
       await client.connect(clientTransport);
       signals.emit(signal);

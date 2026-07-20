@@ -1,5 +1,6 @@
 import type { Diagnostic } from "../diagnostics/diagnostic.js";
 import type { PackageManager } from "../scanners/types.js";
+import type { AutomationPolicy } from "../config/automation-policy.js";
 
 export interface CanonicalPathGroups {
   readonly source: readonly string[];
@@ -37,6 +38,7 @@ export interface CanonicalProjectContext {
   readonly state: {
     readonly visibility: "local" | "tracked";
   };
+  readonly automation: AutomationPolicy;
   readonly enabledAdapters: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   readonly diagnostics: readonly Diagnostic[];
 }

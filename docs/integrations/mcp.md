@@ -1,6 +1,6 @@
 # Local MCP integration
 
-`agentfold mcp` exposes the existing AgentFold continuity engine to MCP-capable desktop applications, IDEs, and coding agents. It runs locally over stdio: there is no network listener, telemetry, source upload, remote service, or AI model call.
+`agentfold mcp` exposes the existing AgentFold continuity engine to MCP-capable desktop applications, IDEs, and coding agents. MCP itself runs locally over stdio: there is no public network listener, telemetry, source upload, remote service, or AI model call. It can delegate to the authenticated [shared local service](../service.md) over a named pipe or Unix-domain socket.
 
 ## Available tools
 
@@ -24,6 +24,16 @@ During development:
 ```bash
 pnpm agentfold mcp --workspace .
 ```
+
+Service selection defaults to `auto`:
+
+```bash
+pnpm agentfold mcp --workspace . --service auto
+pnpm agentfold mcp --workspace . --service required
+pnpm agentfold mcp --workspace . --service disabled
+```
+
+`auto` chooses the service only at startup and warns on stderr before embedded fallback. `required` is intended for future installed connectors. `disabled` preserves the original per-process in-memory session behavior. A lost service connection never triggers a mid-session fallback.
 
 From a production build:
 
@@ -76,4 +86,4 @@ Do not assume either snippet matches a particular application without checking t
 
 ## Current limitations
 
-Session metadata is intentionally in memory and is lost when the process ends. Shutdown does not create an automatic report or checkpoint. Applications must call the lifecycle tools; unexpected termination can recover only the latest durable AgentFold state and checkpoint. There is no daemon, watcher, crash-recovery monitor, HTTP transport, authentication layer, application configuration installer, or application-specific Antigravity, Codex, or IDE connector yet.
+Service session metadata remains intentionally in memory and is lost on service restart. Shutdown does not create a report or checkpoint solely because the process is stopping. There is no watcher, HTTP transport, operating-system service installer, application configuration installer, or application-specific Antigravity, Codex, or IDE connector yet. Embedded mode still has per-process sessions and no cross-application automation.

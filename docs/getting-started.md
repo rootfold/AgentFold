@@ -49,6 +49,23 @@ paths:
 
 Each category is optional. Paths use forward slashes, remain relative to the Git repository, and are normalized and deduplicated during validation. Absolute paths and parent traversal are invalid. A configured path may be created later, but `doctor` warns while it does not exist.
 
+New initialization also records the shared-service automation policy:
+
+```yaml
+automation:
+  enabled: true
+  sessions:
+    heartbeat_interval_seconds: 20
+    stale_after_seconds: 90
+  checkpoints:
+    on_agent_switch: true
+    on_session_close: true
+    recovery_on_timeout: true
+    minimum_interval_seconds: 30
+```
+
+Older configuration without this optional section remains valid and receives these defaults only while resolving context; AgentFold does not rewrite it.
+
 ## Check project health
 
 ```bash
@@ -176,4 +193,13 @@ pnpm agentfold mcp --workspace .
 
 The server lets a compatible host open a session, read bounded context, begin a task, report progress, checkpoint, resume, and close the session through the same validated core used by the CLI commands. It has no network listener and writes protocol messages only to standard output. Safe debug lifecycle messages are available with `--debug` on standard error.
 
-See [Local MCP integration](integrations/mcp.md) for the tool lifecycle, generic manual configuration examples, security boundary, and current limitations. No application-specific configuration is installed automatically.
+The default `--service auto` mode uses the shared service when available and otherwise warns on stderr before preserving embedded behavior. For cross-application coordination:
+
+```bash
+pnpm agentfold service start
+pnpm agentfold service status
+pnpm agentfold mcp --workspace . --service required
+pnpm agentfold service stop
+```
+
+See [Local MCP integration](integrations/mcp.md) for the tool lifecycle and [Shared local service](service.md) for runtime directories, authentication, leases, automatic switch checkpoints, recovery, and troubleshooting. No application-specific configuration is installed automatically.

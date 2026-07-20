@@ -1,5 +1,6 @@
 import { parseConfig } from "../config/parse-config.js";
 import type { AgentFoldConfig } from "../config/types.js";
+import { automationPolicyToConfig, defaultAutomationPolicy } from "../config/automation-policy.js";
 import type { RepositoryMetadata } from "../scanners/types.js";
 
 export const defaultExcludedPaths = [
@@ -47,6 +48,7 @@ export function createInitialConfig(metadata: RepositoryMetadata): AgentFoldConf
       respect_gitignore: true,
       excluded_paths: [...defaultExcludedPaths],
     },
+    automation: automationPolicyToConfig(defaultAutomationPolicy),
     adapters: {},
   };
 

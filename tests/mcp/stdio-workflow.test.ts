@@ -78,8 +78,18 @@ describe("real MCP stdio workflow", () => {
     const useBuiltCli = process.env.AGENTFOLD_MCP_BUILT === "1";
     const entry = path.join(repositoryRoot, useBuiltCli ? "dist/cli.js" : "src/cli/index.ts");
     const serverArguments = useBuiltCli
-      ? [entry, "mcp", "--workspace", fixture, "--debug"]
-      : ["--import", "tsx", entry, "mcp", "--workspace", fixture, "--debug"];
+      ? [entry, "mcp", "--workspace", fixture, "--service", "disabled", "--debug"]
+      : [
+          "--import",
+          "tsx",
+          entry,
+          "mcp",
+          "--workspace",
+          fixture,
+          "--service",
+          "disabled",
+          "--debug",
+        ];
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: serverArguments,

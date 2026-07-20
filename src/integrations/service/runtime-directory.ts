@@ -1,0 +1,125 @@
+import path from "node:path";
+import os from "node:os";
+
+import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
+import type { FileSystem } from "../../core/filesystem/filesystem.js";
+import type { GitRepositoryLocator } from "../../core/git/git-repository-locator.js";
+import type { ServiceEndpointKind } from "./service-types.js";
+
+export interface ServicePlatformInput {
+  readonly platform: NodeJS.Platform;
+  readonly environment: Readonly<Record<string, string | undefined>>;
+  readonly homeDirectory: string;
+}
+
+export interface ServiceRuntimeLocation {
+  readonly directory: string;
+  readonly endpointKind: ServiceEndpointKind;
+}
+
+export interface PreparedServiceRuntime extends ServiceRuntimeLocation {
+  readonly realDirectory: string;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+export interface PrepareServiceRuntimeInput {
+  readonly fileSystem: FileSystem;
+  readonly platform?: ServicePlatformInput;
+  readonly runtimeDirectory?: string;
+  readonly restrictDirectory?: (directory: string) => Promise<void>;
+  readonly gitRepositoryLocator?: GitRepositoryLocator;
+}
+
+export function nodeServicePlatformInput(): ServicePlatformInput {
+  return {
+    platform: process.platform,
+    environment: process.env,
+    homeDirectory: os.homedir(),
+  };
+}
+
+export function resolveServiceRuntimeLocation(
+  input: ServicePlatformInput,
+  override?: string,
+): ServiceRuntimeLocation {
+  const platformPath = input.platform === "win32" ? path.win32 : path.posix;
+  const configuredOverride = override ?? input.environment.AGENTFOLD_RUNTIME_DIR;
+  if (configuredOverride !== undefined && configuredOverride.trim().length > 0) {
+    return {
+      directory: platformPath.resolve(configuredOverride),
+      endpointKind: input.platform === "win32" ? "named-pipe" : "unix-socket",
+    };
+  }
+
+  if (input.platform === "win32") {
+    const localAppData = input.environment.LOCALAPPDATA;
+    if (localAppData === undefined || localAppData.trim().length === 0) {
+      throw new Error("LOCALAPPDATA is unavailable for the AgentFold service runtime.");
+    }
+    return {
+      directory: path.win32.join(localAppData, "AgentFold", "runtime"),
+      endpointKind: "named-pipe",
+    };
+  }
+
+  if (input.platform === "darwin") {
+    return {
+      directory: path.posix.join(
+        input.homeDirectory,
+        "Library",
+        "Application Support",
+        "AgentFold",
+      ),
+      endpointKind: "unix-socket",
+    };
+  }
+
+  const xdgRuntime = input.environment.XDG_RUNTIME_DIR;
+  if (xdgRuntime !== undefined && xdgRuntime.trim().length > 0) {
+    return {
+      directory: path.posix.join(xdgRuntime, "agentfold"),
+      endpointKind: "unix-socket",
+    };
+  }
+  const xdgState = input.environment.XDG_STATE_HOME;
+  return {
+    directory:
+      xdgState !== undefined && xdgState.trim().length > 0
+        ? path.posix.join(xdgState, "agentfold")
+        : path.posix.join(input.homeDirectory, ".local", "state", "agentfold"),
+    endpointKind: "unix-socket",
+  };
+}
+
+function samePath(left: string, right: string, platform: NodeJS.Platform): boolean {
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
+  const normalize = (value: string): string => {
+    const normalized = platformPath.resolve(value).replace(/[\\/]+$/u, "");
+    return platform === "win32" ? normalized.toLocaleLowerCase("en-US") : normalized;
+  };
+  return normalize(left) === normalize(right);
+}
+
+async function defaultRestrictDirectory(directory: string): Promise<void> {
+  if (process.platform !== "win32") {
+    const { chmod } = await import("node:fs/promises");
+    await chmod(directory, 0o700);
+  }
+}
+
+export async function prepareServiceRuntimeDirectory(
+  input: PrepareServiceRuntimeInput,
+): Promise<PreparedServiceRuntime> {
+  const platform = input.platform ?? nodeServicePlatformInput();
+  const location = resolveServiceRuntimeLocation(platform, input.runtimeDirectory);
+  await input.fileSystem.ensureDirectory(location.directory);
+  const realDirectory = await input.fileSystem.realPath(location.directory);
+  if (!samePath(location.directory, realDirectory, platform.platform)) {
+    throw new Error("The AgentFold runtime directory resolves through a symbolic link.");
+  }
+  await (input.restrictDirectory ?? defaultRestrictDirectory)(realDirectory);
+  if ((await input.gitRepositoryLocator?.findRoot(realDirectory)) !== undefined) {
+    throw new Error("The AgentFold runtime directory must remain outside project repositories.");
+  }
+  return { ...location, realDirectory, diagnostics: [] };
+}

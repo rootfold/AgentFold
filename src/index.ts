@@ -1,4 +1,10 @@
 export { ConfigSyntaxError, loadConfig } from "./core/config/load-config.js";
+export {
+  automationPolicySchema,
+  defaultAutomationPolicy,
+  resolveAutomationPolicy,
+} from "./core/config/automation-policy.js";
+export type { AutomationPolicy } from "./core/config/automation-policy.js";
 export { ConfigValidationError, parseConfig } from "./core/config/parse-config.js";
 export { agentFoldConfigSchema } from "./core/config/schema.js";
 export { serializeConfig } from "./core/config/serialize-config.js";
@@ -79,3 +85,21 @@ export type {
 } from "./integrations/mcp/session-registry.js";
 export { agentFoldMcpToolNames } from "./integrations/mcp/tool-names.js";
 export type { AgentFoldMcpToolName } from "./integrations/mcp/tool-names.js";
+export {
+  checkAgentFoldServiceAvailability,
+  connectToAgentFoldService,
+} from "./integrations/service/service-client.js";
+export type {
+  AgentFoldServiceClient,
+  AgentFoldServiceConnection,
+  ServiceAvailability,
+} from "./integrations/service/service-client.js";
+export { agentFoldServiceProtocolVersion } from "./integrations/service/service-protocol.js";
+export { serviceModes, serviceModeSchema } from "./integrations/service/service-mode.js";
+export type { ServiceMode } from "./integrations/service/service-mode.js";
+export type {
+  AgentFoldServiceSession,
+  AgentFoldServiceSessionCloseReason,
+  AgentFoldServiceSessionState,
+  SafeAgentFoldServiceStatus,
+} from "./integrations/service/service-types.js";

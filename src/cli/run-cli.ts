@@ -26,6 +26,7 @@ function defaultOptions(options: RunCliOptions): CreateProgramOptions {
     ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.version === undefined ? {} : { version: options.version }),
     ...(options.runMcpServer === undefined ? {} : { runMcpServer: options.runMcpServer }),
+    ...(options.runService === undefined ? {} : { runService: options.runService }),
   };
 }
 

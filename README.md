@@ -199,7 +199,7 @@ AgentFold does not need access to an agent's private conversation. Instead, it s
 
 The currently implemented workflow is documented in
 [docs/getting-started.md](docs/getting-started.md), including the local stdio
-[MCP integration](docs/integrations/mcp.md).
+[MCP integration](docs/integrations/mcp.md) and [shared local service](docs/service.md).
 
 ### Initialize AgentFold
 

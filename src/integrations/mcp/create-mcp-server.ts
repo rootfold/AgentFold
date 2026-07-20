@@ -37,6 +37,7 @@ export const agentFoldMcpInstructions = [
 
 export interface CreateAgentFoldMcpServerInput {
   readonly context: AgentFoldMcpApplicationContext;
+  readonly handlers?: ReturnType<typeof createMcpToolHandlers>;
 }
 
 function sanitizeValue(value: unknown, repositoryRoot: string): unknown {
@@ -79,7 +80,7 @@ function safeResult(
 
 export function createAgentFoldMcpServer(input: CreateAgentFoldMcpServerInput): McpServer {
   const { context } = input;
-  const handlers = createMcpToolHandlers(context);
+  const handlers = input.handlers ?? createMcpToolHandlers(context);
   const server = new McpServer(
     { name: "agentfold", version: context.version },
     { instructions: agentFoldMcpInstructions },
