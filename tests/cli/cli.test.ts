@@ -31,6 +31,8 @@ describe("AgentFold CLI", () => {
     expect(captured.stdout()).toContain("Usage: agentfold");
     expect(captured.stdout()).toContain("doctor");
     expect(captured.stdout()).toContain("init");
+    expect(captured.stdout()).toContain("start");
+    expect(captured.stdout()).toContain("report");
     expect(captured.stderr()).toBe("");
   });
 

@@ -19,5 +19,19 @@ export type { FileSystem } from "./core/filesystem/filesystem.js";
 export { NodeFileSystem } from "./core/filesystem/node-filesystem.js";
 export { FilesystemGitRepositoryLocator } from "./core/git/filesystem-git-repository-locator.js";
 export type { GitRepositoryLocator } from "./core/git/git-repository-locator.js";
+export { agentReportSchema } from "./core/reports/agent-report-schema.js";
+export { mergeAgentReport } from "./core/reports/merge-report.js";
+export type { AgentReport, ReportMergeSummary } from "./core/reports/types.js";
+export { activeTaskSchema } from "./core/state/active-state-schema.js";
+export { parseActiveState } from "./core/state/parse-active-state.js";
+export { serializeActiveState } from "./core/state/serialize-active-state.js";
+export type {
+  ActiveTask,
+  CheckpointHistoryMetadata,
+  Decision,
+  FailedAttempt,
+  ValidationResult,
+} from "./core/state/types.js";
+export type { SecretRedactionResult } from "./core/reports/redact-secrets.js";
 export { scanRepositoryMetadata } from "./core/scanners/repository-metadata.js";
 export type { RepositoryMetadata } from "./core/scanners/types.js";

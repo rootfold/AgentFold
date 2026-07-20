@@ -1,6 +1,8 @@
 import {
   access,
   mkdir,
+  link,
+  open,
   readdir,
   readFile,
   realpath,
@@ -75,8 +77,23 @@ export class NodeFileSystem implements FileSystem {
     await writeFile(path, content, "utf8");
   }
 
+  async writeTextAndFlush(path: string, content: string): Promise<void> {
+    const handle = await open(path, "wx");
+
+    try {
+      await handle.writeFile(content, "utf8");
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+  }
+
   async ensureDirectory(path: string): Promise<void> {
     await mkdir(path, { recursive: true });
+  }
+
+  async link(source: string, destination: string): Promise<void> {
+    await link(source, destination);
   }
 
   async rename(source: string, destination: string): Promise<void> {

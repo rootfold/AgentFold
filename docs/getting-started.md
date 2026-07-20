@@ -58,3 +58,61 @@ pnpm agentfold doctor
 The current doctor checks Git repository presence and `README.md`, then resolves the canonical project context through the same loader future adapters will use. It reports invalid YAML or schema values, missing or empty context files, unsafe paths, and configured paths that do not exist. It does not modify files.
 
 Canonical AgentFold files are intended to be tracked. Initialization does not edit `.gitignore`; future local task state can be ignored separately.
+
+## Start an active task
+
+Previewing is the default and writes nothing:
+
+```bash
+pnpm agentfold start "Implement GitHub OAuth"
+```
+
+Create the active task non-interactively:
+
+```bash
+pnpm agentfold start "Implement GitHub OAuth" --agent codex --yes
+```
+
+This atomically creates `.agentfold/state/current.md`. It records a repository-relative working context, the current branch and HEAD commit, and an explicit `null` commit when the repository has no commits. It never creates a branch, stages files, or commits changes. An existing active task is never replaced.
+
+When `state.visibility` is `local`, AgentFold warns if `.agentfold/state/` is not ignored. Add only this path when local task state should remain untracked:
+
+```gitignore
+.agentfold/state/
+```
+
+AgentFold does not edit `.gitignore` automatically.
+
+## Submit a structured agent report
+
+Create `report.json`:
+
+```json
+{
+  "agent": "codex",
+  "completed": ["Added the GitHub OAuth callback route"],
+  "decisions": [
+    {
+      "decision": "Reuse the existing session table",
+      "reason": "Avoid changing the existing authentication model"
+    }
+  ],
+  "nextActions": ["Fix the callback integration test"]
+}
+```
+
+PowerShell:
+
+```powershell
+Get-Content .\report.json -Raw | pnpm agentfold report --stdin
+```
+
+macOS, Linux, and other shells with `cat`:
+
+```bash
+cat report.json | pnpm agentfold report --stdin
+```
+
+Use `--agent codex` to supply an omitted agent or explicitly override the JSON `agent` field. Reports append and deduplicate semantic progress; they do not replace earlier conclusions. Validation commands are stored as reported text and are never executed.
+
+AgentFold redacts likely secrets before persistence, but developers and coding agents should not submit secrets, private reasoning, complete conversations, or transcripts. `checkpoint` and `resume` are planned for the next continuity task. Future agent integrations can submit this report structure automatically without exposing private conversations.

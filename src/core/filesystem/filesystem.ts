@@ -11,7 +11,9 @@ export interface FileSystem {
   realPath(path: string): Promise<string>;
   readText(path: string): Promise<string>;
   writeText(path: string, content: string): Promise<void>;
+  writeTextAndFlush(path: string, content: string): Promise<void>;
   ensureDirectory(path: string): Promise<void>;
+  link(source: string, destination: string): Promise<void>;
   rename(source: string, destination: string): Promise<void>;
   remove(path: string, options?: RemoveOptions): Promise<void>;
   currentWorkingDirectory(): string;

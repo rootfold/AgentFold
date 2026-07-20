@@ -3,9 +3,12 @@ import process from "node:process";
 import { CommanderError } from "commander";
 
 import { NodeFileSystem } from "../core/filesystem/node-filesystem.js";
+import { CommandGitInspector } from "../core/git/git-inspector.js";
 import { FilesystemGitRepositoryLocator } from "../core/git/filesystem-git-repository-locator.js";
+import { NodeProcessRunner } from "../core/process/node-process-runner.js";
 import { CliCommandError } from "./command-error.js";
 import { createProgram, type CreateProgramOptions } from "./create-program.js";
+import { NodeStdinReader } from "./input/node-stdin-reader.js";
 import { NodeCliOutput } from "./output/node-cli-output.js";
 
 export type RunCliOptions = Partial<CreateProgramOptions>;
@@ -17,7 +20,10 @@ function defaultOptions(options: RunCliOptions): CreateProgramOptions {
     fileSystem,
     gitRepositoryLocator:
       options.gitRepositoryLocator ?? new FilesystemGitRepositoryLocator(fileSystem),
+    gitInspector: options.gitInspector ?? new CommandGitInspector(new NodeProcessRunner()),
+    stdinReader: options.stdinReader ?? new NodeStdinReader(),
     output: options.output ?? new NodeCliOutput(),
+    ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.version === undefined ? {} : { version: options.version }),
   };
 }

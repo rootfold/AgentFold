@@ -1,16 +1,23 @@
 import { Command } from "commander";
 
 import type { FileSystem } from "../core/filesystem/filesystem.js";
+import type { GitInspector } from "../core/git/git-inspector.js";
 import type { GitRepositoryLocator } from "../core/git/git-repository-locator.js";
 import { packageVersion } from "../package-metadata.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerReportCommand } from "./commands/report.js";
+import { registerStartCommand } from "./commands/start.js";
+import type { StdinReader } from "./input/stdin-reader.js";
 import type { CliOutput } from "./output/cli-output.js";
 
 export interface CreateProgramOptions {
   readonly fileSystem: FileSystem;
   readonly gitRepositoryLocator: GitRepositoryLocator;
+  readonly gitInspector: GitInspector;
+  readonly stdinReader: StdinReader;
   readonly output: CliOutput;
+  readonly now?: () => Date;
   readonly version?: string;
 }
 
@@ -42,6 +49,8 @@ export function createProgram(options: CreateProgramOptions): Command {
     },
     options.output,
   );
+  registerStartCommand(program, options, options.output);
+  registerReportCommand(program, options, options.output);
 
   return program;
 }

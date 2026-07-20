@@ -92,8 +92,19 @@ class FailingWriteFileSystem implements FileSystem {
     return this.delegate.writeText(path_, content);
   }
 
+  writeTextAndFlush(path_: string, content: string): Promise<void> {
+    if (path_.endsWith(this.failingSuffix)) {
+      return Promise.reject(new Error("Simulated write failure"));
+    }
+    return this.delegate.writeTextAndFlush(path_, content);
+  }
+
   ensureDirectory(path_: string): Promise<void> {
     return this.delegate.ensureDirectory(path_);
+  }
+
+  link(source: string, destination: string): Promise<void> {
+    return this.delegate.link(source, destination);
   }
 
   rename(source: string, destination: string): Promise<void> {
