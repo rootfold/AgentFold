@@ -27,4 +27,6 @@ export interface RepositoryMetadata {
   readonly commands: Readonly<Record<string, string>>;
   readonly sourceDirectories: readonly string[];
   readonly testDirectories: readonly string[];
+  readonly documentationDirectories: readonly string[];
+  readonly generatedDirectories: readonly string[];
 }

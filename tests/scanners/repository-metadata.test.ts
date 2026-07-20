@@ -66,17 +66,21 @@ describe("scanRepositoryMetadata", () => {
     expect(metadata.commands.release).toBeUndefined();
   });
 
-  it("detects Python markers and existing top-level source and test directories", async () => {
+  it("detects Python markers and known existing top-level project directories", async () => {
     const root = await fixture();
     await writeFile(path.join(root, "pyproject.toml"), "[project]\nname = 'example'\n", "utf8");
     await mkdir(path.join(root, "src"));
     await mkdir(path.join(root, "tests"));
+    await mkdir(path.join(root, "docs"));
+    await mkdir(path.join(root, "coverage"));
 
     const metadata = await scanRepositoryMetadata(new NodeFileSystem(() => root), root);
 
     expect(metadata.python).toEqual({ present: true, markerFiles: ["pyproject.toml"] });
     expect(metadata.sourceDirectories).toEqual(["src"]);
     expect(metadata.testDirectories).toEqual(["tests"]);
+    expect(metadata.documentationDirectories).toEqual(["docs"]);
+    expect(metadata.generatedDirectories).toEqual(["coverage"]);
     expect(metadata.packageManager).toBeUndefined();
     expect(metadata.commands).toEqual({});
   });

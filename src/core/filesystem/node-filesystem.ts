@@ -1,4 +1,14 @@
-import { access, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  readdir,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import process from "node:process";
 
 import type { FileSystem, FileSystemEntryType, RemoveOptions } from "./filesystem.js";
@@ -51,6 +61,10 @@ export class NodeFileSystem implements FileSystem {
 
   async listDirectory(path: string): Promise<readonly string[]> {
     return (await readdir(path)).sort((left, right) => left.localeCompare(right));
+  }
+
+  realPath(path: string): Promise<string> {
+    return realpath(path);
   }
 
   readText(path: string): Promise<string> {

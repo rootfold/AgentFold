@@ -64,5 +64,7 @@ export async function scanRepositoryMetadata(
     commands: detectedCommands(packageManagerMetadata.packageManager, node.scripts),
     sourceDirectories: directories.sourceDirectories,
     testDirectories: directories.testDirectories,
+    documentationDirectories: directories.documentationDirectories,
+    generatedDirectories: directories.generatedDirectories,
   };
 }

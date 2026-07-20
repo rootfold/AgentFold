@@ -22,7 +22,7 @@ export async function loadConfig(
   let input: unknown;
 
   try {
-    input = parseYaml(source);
+    input = parseYaml(source.replace(/^\uFEFF/u, ""));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown YAML parsing error";
     throw new ConfigSyntaxError(configPath, message);

@@ -2,8 +2,7 @@ import path from "node:path";
 
 import type { Command } from "commander";
 
-import { ConfigSyntaxError, loadConfig } from "../../core/config/load-config.js";
-import { ConfigValidationError } from "../../core/config/parse-config.js";
+import { loadCanonicalContext } from "../../core/context/load-context.js";
 import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
 import { formatDiagnostic } from "../../core/diagnostics/format-diagnostic.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
@@ -113,54 +112,55 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
   try {
     const projectRoot = repositoryRoot ?? workingDirectory;
     const inspection = await inspectInstallation(fileSystem, projectRoot);
+    const contextResult = await loadCanonicalContext({
+      fileSystem,
+      gitRepositoryLocator,
+      startDirectory: workingDirectory,
+    });
 
-    if (inspection.configExists) {
-      try {
-        await loadConfig(fileSystem, path.join(projectRoot, ".agentfold", "config.yaml"));
-
-        if (inspection.missingFiles.length === 0) {
-          diagnostics.push({
-            code: "AFD004",
-            severity: "success",
-            message: "AgentFold is initialized and its configuration is valid.",
-          });
-        } else {
-          diagnostics.push({
-            code: "AFD004",
-            severity: "warning",
-            message: `AgentFold is partially initialized. Missing: ${inspection.missingFiles.join(", ")}.`,
-            suggestion: "Restore the missing canonical files; doctor did not modify anything.",
-          });
-        }
-      } catch (error: unknown) {
-        if (error instanceof ConfigSyntaxError || error instanceof ConfigValidationError) {
-          invalidConfiguration = true;
-          diagnostics.push({
-            code: "AFD004",
-            severity: "error",
-            message: error.message,
-            suggestion: "Correct .agentfold/config.yaml and run doctor again.",
-          });
-        } else {
-          throw error;
-        }
+    if (contextResult.status === "success") {
+      diagnostics.push({
+        code: "AFD004",
+        severity: "success",
+        message: "Canonical AgentFold project context is valid.",
+      });
+      diagnostics.push(...contextResult.diagnostics);
+    } else if (contextResult.diagnostics.every((diagnostic) => diagnostic.code === "AFC001")) {
+      diagnostics.push({
+        code: "AFD004",
+        severity: "warning",
+        message: "Canonical context cannot be resolved outside a Git repository.",
+        suggestion: "Initialize Git before adopting AgentFold for this project.",
+      });
+    } else if (contextResult.diagnostics.every((diagnostic) => diagnostic.code === "AFC002")) {
+      if (inspection.directoryExists) {
+        const present =
+          inspection.presentFiles.length === 0 ? "none" : inspection.presentFiles.join(", ");
+        diagnostics.push({
+          code: "AFD004",
+          severity: "warning",
+          message: `A partial AgentFold installation was found. Present: ${present}. Missing: ${inspection.missingFiles.join(", ")}.`,
+          suggestion: "Review the partial installation before running init again.",
+        });
+      } else {
+        diagnostics.push({
+          code: "AFD004",
+          severity: "warning",
+          message: ".agentfold/config.yaml was not found.",
+          suggestion: "This is expected before AgentFold initialization.",
+        });
       }
-    } else if (inspection.directoryExists) {
-      const present =
-        inspection.presentFiles.length === 0 ? "none" : inspection.presentFiles.join(", ");
-      diagnostics.push({
-        code: "AFD004",
-        severity: "warning",
-        message: `A partial AgentFold installation was found. Present: ${present}. Missing: ${inspection.missingFiles.join(", ")}.`,
-        suggestion: "Review the partial installation before running init again.",
-      });
     } else {
+      invalidConfiguration = contextResult.diagnostics.some((diagnostic) =>
+        ["AFC003", "AFC004", "AFC007", "AFC010"].includes(diagnostic.code),
+      );
       diagnostics.push({
         code: "AFD004",
-        severity: "warning",
-        message: ".agentfold/config.yaml was not found.",
-        suggestion: "This is expected before AgentFold initialization.",
+        severity: "error",
+        message: "Canonical AgentFold project context is invalid.",
+        suggestion: "Review the following context diagnostics; doctor did not modify anything.",
       });
+      diagnostics.push(...contextResult.diagnostics);
     }
   } catch (error: unknown) {
     diagnostics.push({

@@ -44,6 +44,8 @@ function metadataLines(metadata: RepositoryMetadata): readonly string[] {
     `Package manager: ${metadata.packageManager ?? "not detected"}`,
     `Source directories: ${metadata.sourceDirectories.join(", ") || "none"}`,
     `Test directories: ${metadata.testDirectories.join(", ") || "none"}`,
+    `Documentation directories: ${metadata.documentationDirectories.join(", ") || "none"}`,
+    `Generated directories: ${metadata.generatedDirectories.join(", ") || "none"}`,
   ];
 }
 

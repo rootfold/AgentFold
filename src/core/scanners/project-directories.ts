@@ -4,6 +4,8 @@ import type { FileSystem } from "../filesystem/filesystem.js";
 
 const sourceDirectoryCandidates = ["src", "source", "app", "lib", "packages"] as const;
 const testDirectoryCandidates = ["tests", "test", "__tests__", "spec"] as const;
+const documentationDirectoryCandidates = ["docs", "doc", "documentation"] as const;
+const generatedDirectoryCandidates = ["dist", "build", "coverage", "out", ".next"] as const;
 
 async function existingDirectories(
   fileSystem: FileSystem,
@@ -26,11 +28,21 @@ export async function scanProjectDirectories(
 ): Promise<{
   readonly sourceDirectories: readonly string[];
   readonly testDirectories: readonly string[];
+  readonly documentationDirectories: readonly string[];
+  readonly generatedDirectories: readonly string[];
 }> {
-  const [sourceDirectories, testDirectories] = await Promise.all([
-    existingDirectories(fileSystem, repositoryRoot, sourceDirectoryCandidates),
-    existingDirectories(fileSystem, repositoryRoot, testDirectoryCandidates),
-  ]);
+  const [sourceDirectories, testDirectories, documentationDirectories, generatedDirectories] =
+    await Promise.all([
+      existingDirectories(fileSystem, repositoryRoot, sourceDirectoryCandidates),
+      existingDirectories(fileSystem, repositoryRoot, testDirectoryCandidates),
+      existingDirectories(fileSystem, repositoryRoot, documentationDirectoryCandidates),
+      existingDirectories(fileSystem, repositoryRoot, generatedDirectoryCandidates),
+    ]);
 
-  return { sourceDirectories, testDirectories };
+  return {
+    sourceDirectories,
+    testDirectories,
+    documentationDirectories,
+    generatedDirectories,
+  };
 }

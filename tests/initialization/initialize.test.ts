@@ -77,6 +77,10 @@ class FailingWriteFileSystem implements FileSystem {
     return this.delegate.listDirectory(path_);
   }
 
+  realPath(path_: string): Promise<string> {
+    return this.delegate.realPath(path_);
+  }
+
   readText(path_: string): Promise<string> {
     return this.delegate.readText(path_);
   }
@@ -149,6 +153,8 @@ describe("safe AgentFold initialization", () => {
     await writeFile(path.join(root, "pnpm-lock.yaml"), "", "utf8");
     await mkdir(path.join(root, "src"));
     await mkdir(path.join(root, "tests"));
+    await mkdir(path.join(root, "docs"));
+    await mkdir(path.join(root, "dist"));
 
     const plan = readyPlan(await prepareInitialization(dependencies(root)));
     await commitInitialization(
@@ -165,6 +171,12 @@ describe("safe AgentFold initialization", () => {
     const config = await loadConfig(fileSystem, path.join(root, ".agentfold", "config.yaml"));
     expect(config.project.name).toBe(path.basename(root));
     expect(config.package_manager).toBe("pnpm");
+    expect(config.paths).toEqual({
+      source: ["src"],
+      tests: ["tests"],
+      documentation: ["docs"],
+      generated: ["dist"],
+    });
     expect(await fileSystem.readText(agentsPath)).toBe("# Existing instructions\n");
     expect(
       await fileSystem.readText(path.join(root, ".agentfold", "context", "project.md")),
@@ -192,6 +204,15 @@ describe("safe AgentFold initialization", () => {
     const secondPlan = await prepareInitialization(dependencies(root));
     expect(secondPlan.status).toBe("already-initialized");
     expect(secondPlan.exitCode).toBe(0);
+  });
+
+  it("does not invent path groups when no known directories exist", async () => {
+    const root = await repositoryFixture();
+    const plan = readyPlan(await prepareInitialization(dependencies(root)));
+    const configFile = plan.files.find((file) => file.relativePath === "config.yaml");
+
+    expect(configFile).toBeDefined();
+    expect(configFile?.content).not.toContain("\npaths:\n");
   });
 
   it("reports a partial installation as a conflict", async () => {

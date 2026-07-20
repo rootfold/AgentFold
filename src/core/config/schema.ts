@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { normalizeRepositoryPath, normalizeRepositoryPaths } from "./repository-path.js";
+
 const nonEmptyString = z.string().trim().min(1, "Must not be empty");
 
 const projectSchema = z
@@ -19,6 +21,30 @@ const commandsSchema = z.record(
   z.string().regex(/^[a-z][a-z0-9:_-]*$/u, "Must be a valid command name"),
   nonEmptyString,
 );
+
+const repositoryPathSchema = z.string().transform((value, context) => {
+  const result = normalizeRepositoryPath(value);
+
+  if (!result.success) {
+    context.addIssue({ code: "custom", message: result.message });
+    return z.NEVER;
+  }
+
+  return result.path;
+});
+
+const repositoryPathArraySchema = z
+  .array(repositoryPathSchema)
+  .transform((paths) => normalizeRepositoryPaths(paths));
+
+const pathsSchema = z
+  .object({
+    source: repositoryPathArraySchema.optional(),
+    tests: repositoryPathArraySchema.optional(),
+    documentation: repositoryPathArraySchema.optional(),
+    generated: repositoryPathArraySchema.optional(),
+  })
+  .strict();
 
 const stateSchema = z
   .object({
@@ -42,6 +68,7 @@ export const agentFoldConfigSchema = z
     runtime: runtimeSchema,
     package_manager: z.enum(["pnpm", "npm", "yarn", "bun"]).optional(),
     commands: commandsSchema,
+    paths: pathsSchema.optional(),
     state: stateSchema,
     safety: safetySchema,
     adapters: z.record(nonEmptyString, adapterOptionsSchema).optional(),

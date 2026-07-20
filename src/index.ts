@@ -3,6 +3,16 @@ export { ConfigValidationError, parseConfig } from "./core/config/parse-config.j
 export { agentFoldConfigSchema } from "./core/config/schema.js";
 export { serializeConfig } from "./core/config/serialize-config.js";
 export type { AgentFoldConfig } from "./core/config/types.js";
+export { loadCanonicalContext } from "./core/context/load-context.js";
+export type { LoadCanonicalContextDependencies } from "./core/context/load-context.js";
+export type {
+  CanonicalContextDocuments,
+  CanonicalContextFailure,
+  CanonicalContextLoadResult,
+  CanonicalContextSuccess,
+  CanonicalPathGroups,
+  CanonicalProjectContext,
+} from "./core/context/types.js";
 export type { Diagnostic, DiagnosticSeverity } from "./core/diagnostics/diagnostic.js";
 export { formatDiagnostic } from "./core/diagnostics/format-diagnostic.js";
 export type { FileSystem } from "./core/filesystem/filesystem.js";

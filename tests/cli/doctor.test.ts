@@ -40,21 +40,25 @@ async function fixture(): Promise<{
   };
 }
 
+async function initializeFixture(testFixture: Awaited<ReturnType<typeof fixture>>): Promise<void> {
+  const plan = await prepareInitialization({
+    ...testFixture,
+    agentfoldVersion: "0.0.0-test",
+    now: () => new Date("2026-07-20T12:00:00.000Z"),
+  });
+  if (plan.status !== "ready") {
+    throw new Error("Expected fixture initialization to be ready");
+  }
+  await commitInitialization(
+    plan,
+    new AtomicInitializationWriter(testFixture.fileSystem, () => ".doctor-init"),
+  );
+}
+
 describe("doctor installation checks", () => {
   it("recognizes a valid initialized project", async () => {
     const testFixture = await fixture();
-    const plan = await prepareInitialization({
-      ...testFixture,
-      agentfoldVersion: "0.0.0-test",
-      now: () => new Date("2026-07-20T12:00:00.000Z"),
-    });
-    if (plan.status !== "ready") {
-      throw new Error("Expected fixture initialization to be ready");
-    }
-    await commitInitialization(
-      plan,
-      new AtomicInitializationWriter(testFixture.fileSystem, () => ".doctor-init"),
-    );
+    await initializeFixture(testFixture);
 
     const result = await runDoctor(testFixture);
 
@@ -63,8 +67,67 @@ describe("doctor installation checks", () => {
       expect.objectContaining({
         code: "AFD004",
         severity: "success",
-        message: expect.stringContaining("configuration is valid"),
+        message: expect.stringContaining("project context is valid"),
       }),
+    );
+  });
+
+  it("reports missing canonical context files through the canonical loader", async () => {
+    const testFixture = await fixture();
+    await initializeFixture(testFixture);
+    await rm(path.join(testFixture.root, ".agentfold", "context", "architecture.md"));
+
+    const result = await runDoctor(testFixture);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "AFC005", severity: "error" }),
+    );
+  });
+
+  it("reports empty context and missing configured paths as non-failing warnings", async () => {
+    const testFixture = await fixture();
+    await initializeFixture(testFixture);
+    await writeFile(
+      path.join(testFixture.root, ".agentfold", "context", "commands.md"),
+      "  \r\n",
+      "utf8",
+    );
+    const configPath = path.join(testFixture.root, ".agentfold", "config.yaml");
+    const config = await testFixture.fileSystem.readText(configPath);
+    await writeFile(
+      configPath,
+      config.replace("state:\n", "paths:\n  source:\n    - missing-source\nstate:\n"),
+      "utf8",
+    );
+
+    const result = await runDoctor(testFixture);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "AFC006", severity: "warning" }),
+    );
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "AFC008", severity: "warning" }),
+    );
+  });
+
+  it("uses invalid-configuration exit code for unsafe configured traversal", async () => {
+    const testFixture = await fixture();
+    await initializeFixture(testFixture);
+    const configPath = path.join(testFixture.root, ".agentfold", "config.yaml");
+    const config = await testFixture.fileSystem.readText(configPath);
+    await writeFile(
+      configPath,
+      config.replace("state:\n", "paths:\n  source:\n    - ../secrets\nstate:\n"),
+      "utf8",
+    );
+
+    const result = await runDoctor(testFixture);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "AFC007", severity: "error" }),
     );
   });
 

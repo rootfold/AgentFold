@@ -77,4 +77,57 @@ describe("AgentFold YAML configuration", () => {
       issues: expect.arrayContaining([expect.objectContaining({ path: "state.visibility" })]),
     });
   });
+
+  it("normalizes, sorts, deduplicates, and portably serializes repository paths", () => {
+    const config = parseConfig({
+      ...minimalConfig(),
+      paths: {
+        source: ["src\\features", "src/features", " ./lib/ "],
+        tests: [],
+        documentation: ["docs\\reference"],
+      },
+    });
+
+    expect(config.paths).toEqual({
+      source: ["lib", "src/features"],
+      tests: [],
+      documentation: ["docs/reference"],
+    });
+    const serialized = serializeConfig(config);
+    expect(serialized).toContain("- src/features");
+    expect(serialized).toContain("- docs/reference");
+    expect(serialized).not.toContain("\\");
+  });
+
+  it.each(["C:\\secrets", "C:/secrets", "/etc/secrets", "\\\\server\\share"])(
+    "rejects absolute repository path %s",
+    (configuredPath) => {
+      expect(() =>
+        parseConfig({
+          ...minimalConfig(),
+          paths: { source: [configuredPath] },
+        }),
+      ).toThrow(ConfigValidationError);
+    },
+  );
+
+  it.each(["../secrets", "src/../secrets", "src\\..\\secrets"])(
+    "rejects parent traversal %s",
+    (configuredPath) => {
+      expect(() =>
+        parseConfig({
+          ...minimalConfig(),
+          paths: { source: [configuredPath] },
+        }),
+      ).toThrow(ConfigValidationError);
+    },
+  );
+
+  it("loads a UTF-8 BOM configuration", async () => {
+    const fixture = await configFixture(`\uFEFF${serializeConfig(minimalConfig())}`);
+
+    await expect(loadConfig(fixture.fileSystem, fixture.configPath)).resolves.toEqual(
+      minimalConfig(),
+    );
+  });
 });
