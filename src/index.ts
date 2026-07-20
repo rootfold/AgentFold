@@ -1,7 +1,13 @@
+export { ConfigSyntaxError, loadConfig } from "./core/config/load-config.js";
 export { ConfigValidationError, parseConfig } from "./core/config/parse-config.js";
 export { agentFoldConfigSchema } from "./core/config/schema.js";
+export { serializeConfig } from "./core/config/serialize-config.js";
 export type { AgentFoldConfig } from "./core/config/types.js";
 export type { Diagnostic, DiagnosticSeverity } from "./core/diagnostics/diagnostic.js";
 export { formatDiagnostic } from "./core/diagnostics/format-diagnostic.js";
 export type { FileSystem } from "./core/filesystem/filesystem.js";
 export { NodeFileSystem } from "./core/filesystem/node-filesystem.js";
+export { FilesystemGitRepositoryLocator } from "./core/git/filesystem-git-repository-locator.js";
+export type { GitRepositoryLocator } from "./core/git/git-repository-locator.js";
+export { scanRepositoryMetadata } from "./core/scanners/repository-metadata.js";
+export type { RepositoryMetadata } from "./core/scanners/types.js";

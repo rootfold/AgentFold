@@ -4,7 +4,7 @@ import { CommanderError } from "commander";
 
 import { NodeFileSystem } from "../core/filesystem/node-filesystem.js";
 import { FilesystemGitRepositoryLocator } from "../core/git/filesystem-git-repository-locator.js";
-import { DoctorCommandError } from "./commands/doctor.js";
+import { CliCommandError } from "./command-error.js";
 import { createProgram, type CreateProgramOptions } from "./create-program.js";
 import { NodeCliOutput } from "./output/node-cli-output.js";
 
@@ -33,7 +33,7 @@ export async function runCli(
     await program.parseAsync([...arguments_]);
     return 0;
   } catch (error: unknown) {
-    if (error instanceof DoctorCommandError) {
+    if (error instanceof CliCommandError) {
       return error.exitCode;
     }
 

@@ -5,7 +5,7 @@ const nonEmptyString = z.string().trim().min(1, "Must not be empty");
 const projectSchema = z
   .object({
     name: nonEmptyString.max(100, "Must be 100 characters or fewer"),
-    summary: nonEmptyString.max(1_000, "Must be 1000 characters or fewer"),
+    summary: z.string().trim().max(1_000, "Must be 1000 characters or fewer"),
   })
   .strict();
 
@@ -15,9 +15,10 @@ const runtimeSchema = z
   })
   .strict();
 
-const commandsSchema = z
-  .record(z.string().regex(/^[a-z][a-z0-9:_-]*$/u, "Must be a valid command name"), nonEmptyString)
-  .refine((commands) => Object.keys(commands).length > 0, "At least one command is required");
+const commandsSchema = z.record(
+  z.string().regex(/^[a-z][a-z0-9:_-]*$/u, "Must be a valid command name"),
+  nonEmptyString,
+);
 
 const stateSchema = z
   .object({
@@ -39,7 +40,7 @@ export const agentFoldConfigSchema = z
     version: z.literal(1),
     project: projectSchema,
     runtime: runtimeSchema,
-    package_manager: z.enum(["pnpm", "npm", "yarn", "bun"]),
+    package_manager: z.enum(["pnpm", "npm", "yarn", "bun"]).optional(),
     commands: commandsSchema,
     state: stateSchema,
     safety: safetySchema,

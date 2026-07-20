@@ -31,4 +31,24 @@ describe("NodeFileSystem", () => {
     await expect(fileSystem.readText(file)).resolves.toBe("AgentFold ✓");
     expect(fileSystem.currentWorkingDirectory()).toBe(fixture);
   });
+
+  it("lists, classifies, renames, and removes fixture entries", async () => {
+    const fixture = await mkdtemp(path.join(os.tmpdir(), "agentfold-fs-"));
+    temporaryDirectories.push(fixture);
+    const fileSystem = new NodeFileSystem(() => fixture);
+    const source = path.join(fixture, "source");
+    const destination = path.join(fixture, "destination");
+
+    await fileSystem.ensureDirectory(source);
+    await fileSystem.writeText(path.join(source, "file.txt"), "content");
+
+    await expect(fileSystem.entryType(source)).resolves.toBe("directory");
+    await expect(fileSystem.entryType(path.join(source, "file.txt"))).resolves.toBe("file");
+    await expect(fileSystem.listDirectory(source)).resolves.toEqual(["file.txt"]);
+
+    await fileSystem.rename(source, destination);
+    await expect(fileSystem.exists(destination)).resolves.toBe(true);
+    await fileSystem.remove(destination, { recursive: true });
+    await expect(fileSystem.entryType(destination)).resolves.toBeUndefined();
+  });
 });

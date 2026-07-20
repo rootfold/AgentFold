@@ -2,12 +2,16 @@ import path from "node:path";
 
 import type { Command } from "commander";
 
+import { ConfigSyntaxError, loadConfig } from "../../core/config/load-config.js";
+import { ConfigValidationError } from "../../core/config/parse-config.js";
 import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
 import { formatDiagnostic } from "../../core/diagnostics/format-diagnostic.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
 import type { GitRepositoryLocator } from "../../core/git/git-repository-locator.js";
+import { inspectInstallation } from "../../core/initialization/inspect-installation.js";
 import type { CliOutput } from "../output/cli-output.js";
 import { writeLine } from "../output/cli-output.js";
+import { CliCommandError } from "../command-error.js";
 
 export interface DoctorDependencies {
   readonly fileSystem: FileSystem;
@@ -27,6 +31,8 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
   const { fileSystem, gitRepositoryLocator } = dependencies;
   const diagnostics: Diagnostic[] = [];
   let workingDirectory: string;
+  let repositoryRoot: string | undefined;
+  let invalidConfiguration = false;
 
   try {
     workingDirectory = fileSystem.currentWorkingDirectory();
@@ -56,7 +62,7 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
   }
 
   try {
-    const repositoryRoot = await gitRepositoryLocator.findRoot(workingDirectory);
+    repositoryRoot = await gitRepositoryLocator.findRoot(workingDirectory);
     diagnostics.push(
       repositoryRoot === undefined
         ? {
@@ -80,7 +86,8 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
   }
 
   try {
-    const readmeExists = await fileSystem.exists(path.join(workingDirectory, "README.md"));
+    const projectRoot = repositoryRoot ?? workingDirectory;
+    const readmeExists = await fileSystem.exists(path.join(projectRoot, "README.md"));
     diagnostics.push(
       readmeExists
         ? {
@@ -104,23 +111,57 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
   }
 
   try {
-    const configExists = await fileSystem.exists(
-      path.join(workingDirectory, ".agentfold", "config.yaml"),
-    );
-    diagnostics.push(
-      configExists
-        ? {
+    const projectRoot = repositoryRoot ?? workingDirectory;
+    const inspection = await inspectInstallation(fileSystem, projectRoot);
+
+    if (inspection.configExists) {
+      try {
+        await loadConfig(fileSystem, path.join(projectRoot, ".agentfold", "config.yaml"));
+
+        if (inspection.missingFiles.length === 0) {
+          diagnostics.push({
             code: "AFD004",
             severity: "success",
-            message: ".agentfold/config.yaml exists.",
-          }
-        : {
+            message: "AgentFold is initialized and its configuration is valid.",
+          });
+        } else {
+          diagnostics.push({
             code: "AFD004",
             severity: "warning",
-            message: ".agentfold/config.yaml was not found.",
-            suggestion: "This is expected before AgentFold initialization.",
-          },
-    );
+            message: `AgentFold is partially initialized. Missing: ${inspection.missingFiles.join(", ")}.`,
+            suggestion: "Restore the missing canonical files; doctor did not modify anything.",
+          });
+        }
+      } catch (error: unknown) {
+        if (error instanceof ConfigSyntaxError || error instanceof ConfigValidationError) {
+          invalidConfiguration = true;
+          diagnostics.push({
+            code: "AFD004",
+            severity: "error",
+            message: error.message,
+            suggestion: "Correct .agentfold/config.yaml and run doctor again.",
+          });
+        } else {
+          throw error;
+        }
+      }
+    } else if (inspection.directoryExists) {
+      const present =
+        inspection.presentFiles.length === 0 ? "none" : inspection.presentFiles.join(", ");
+      diagnostics.push({
+        code: "AFD004",
+        severity: "warning",
+        message: `A partial AgentFold installation was found. Present: ${present}. Missing: ${inspection.missingFiles.join(", ")}.`,
+        suggestion: "Review the partial installation before running init again.",
+      });
+    } else {
+      diagnostics.push({
+        code: "AFD004",
+        severity: "warning",
+        message: ".agentfold/config.yaml was not found.",
+        suggestion: "This is expected before AgentFold initialization.",
+      });
+    }
   } catch (error: unknown) {
     diagnostics.push({
       code: "AFD004",
@@ -131,7 +172,11 @@ export async function runDoctor(dependencies: DoctorDependencies): Promise<Docto
 
   return {
     diagnostics,
-    exitCode: diagnostics.some((diagnostic) => diagnostic.severity === "error") ? 1 : 0,
+    exitCode: invalidConfiguration
+      ? 2
+      : diagnostics.some((diagnostic) => diagnostic.severity === "error")
+        ? 1
+        : 0,
   };
 }
 
@@ -153,14 +198,7 @@ export function registerDoctorCommand(
       }
 
       if (result.exitCode !== 0) {
-        throw new DoctorCommandError(result.exitCode);
+        throw new CliCommandError(result.exitCode, "AgentFold doctor found execution failures");
       }
     });
-}
-
-export class DoctorCommandError extends Error {
-  constructor(readonly exitCode: number) {
-    super("AgentFold doctor found execution failures");
-    this.name = "DoctorCommandError";
-  }
 }

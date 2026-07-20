@@ -4,6 +4,7 @@ import type { FileSystem } from "../core/filesystem/filesystem.js";
 import type { GitRepositoryLocator } from "../core/git/git-repository-locator.js";
 import { packageVersion } from "../package-metadata.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerInitCommand } from "./commands/init.js";
 import type { CliOutput } from "./output/cli-output.js";
 
 export interface CreateProgramOptions {
@@ -32,6 +33,15 @@ export function createProgram(options: CreateProgramOptions): Command {
     });
 
   registerDoctorCommand(program, options, options.output);
+  registerInitCommand(
+    program,
+    {
+      fileSystem: options.fileSystem,
+      gitRepositoryLocator: options.gitRepositoryLocator,
+      agentfoldVersion: options.version ?? packageVersion,
+    },
+    options.output,
+  );
 
   return program;
 }

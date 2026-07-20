@@ -197,6 +197,9 @@ AgentFold does not need access to an agent's private conversation. Instead, it s
 
 ## Quick start
 
+The currently implemented safe initialization workflow is documented in
+[docs/getting-started.md](docs/getting-started.md).
+
 ### Initialize AgentFold
 
 ```bash
