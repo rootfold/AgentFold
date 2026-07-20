@@ -40,5 +40,32 @@ export type {
   ValidationResult,
 } from "./core/state/types.js";
 export type { SecretRedactionResult } from "./core/reports/redact-secrets.js";
+export { assembleResumePacket } from "./core/resume/assemble-resume-packet.js";
+export type {
+  AssembleResumePacketInput,
+  AssembleResumePacketResult,
+} from "./core/resume/assemble-resume-packet.js";
+export { prepareResume } from "./core/resume/prepare-resume.js";
+export type {
+  PrepareResumeDependencies,
+  PrepareResumeInput,
+  ReadyResumePlan,
+  ResumePlan,
+  TerminalResumePlan,
+} from "./core/resume/prepare-resume.js";
+export { renderResumeJson } from "./core/resume/render-resume-json.js";
+export { renderResumeMarkdown } from "./core/resume/render-resume-markdown.js";
+export {
+  resumeFormats,
+  resumePacketSchema,
+  resumeTargets,
+} from "./core/resume/resume-packet-schema.js";
+export { truncateResumePacket } from "./core/resume/truncate-resume-packet.js";
+export type {
+  ResumeFormat,
+  ResumePacket,
+  ResumePacketTruncationResult,
+  ResumeTarget,
+} from "./core/resume/types.js";
 export { scanRepositoryMetadata } from "./core/scanners/repository-metadata.js";
 export type { RepositoryMetadata } from "./core/scanners/types.js";

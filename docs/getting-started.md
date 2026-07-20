@@ -141,4 +141,27 @@ Git branch, HEAD, staged and unstaged status, repository-relative changed paths,
 
 History is stored under `.agentfold/state/history/` as deterministic Markdown with YAML front matter. Observed Git facts and agent-reported conclusions remain visibly separate. Checkpoints contain no full diff, source-file content, environment values, terminal transcript, or private reasoning. Untracked files are named but their contents and line counts are not inspected.
 
-Checkpointing never stages or commits files. Running it again without a meaningful Git or semantic change leaves both history and active state byte-for-byte unchanged. `agentfold resume` will be implemented next; future integrations can invoke report and checkpoint automatically without adding watchers or Git hooks.
+Checkpointing never stages or commits files. Running it again without a meaningful Git or semantic change leaves both history and active state byte-for-byte unchanged.
+
+## Resume from a checkpoint
+
+Render the latest immutable checkpoint for the active task as Markdown on standard output:
+
+```bash
+pnpm agentfold resume
+```
+
+Add a small Codex-specific hint, serialize the typed packet as JSON, select a historical checkpoint, or atomically create an output file:
+
+```bash
+pnpm agentfold resume --for codex
+pnpm agentfold resume --format json
+pnpm agentfold resume --checkpoint CP-001
+pnpm agentfold resume --output handoff.md
+```
+
+Resume follows active-state checkpoint metadata and validates the selected immutable history file. A historical checkpoint can be selected explicitly and is marked as not latest. The command does not rerun Git discovery, read source files, or include complete diffs. Automatically observed Git facts remain separate from earlier agent-reported conclusions, and reused or absent semantic reports are labeled explicitly.
+
+Markdown is intended for pasting into a fresh coding-agent session. JSON contains the same bounded `ResumePacket` data for future integrations, with diagnostics kept on standard error. Target options add only a display and instruction-file hint; they do not generate or modify agent instructions. Relative output paths are resolved from the repository root, parent directories may be created inside that boundary, and existing files are never overwritten. A mismatched output extension produces a warning but the requested filename is preserved.
+
+The continuation packet asks the receiving agent to submit concise structured conclusions before ending. Future work may automate report and checkpoint invocation, but resume itself has no adapters, managed processes, watchers, Git hooks, network calls, or model integration.

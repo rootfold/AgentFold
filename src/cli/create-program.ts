@@ -8,6 +8,7 @@ import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerReportCommand } from "./commands/report.js";
+import { registerResumeCommand } from "./commands/resume.js";
 import { registerStartCommand } from "./commands/start.js";
 import type { StdinReader } from "./input/stdin-reader.js";
 import type { CliOutput } from "./output/cli-output.js";
@@ -53,6 +54,7 @@ export function createProgram(options: CreateProgramOptions): Command {
   registerStartCommand(program, options, options.output);
   registerReportCommand(program, options, options.output);
   registerCheckpointCommand(program, options, options.output);
+  registerResumeCommand(program, options, options.output);
 
   return program;
 }

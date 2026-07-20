@@ -1,4 +1,5 @@
 import { agentReportSchema } from "./agent-report-schema.js";
+import type { Checkpoint } from "../checkpoints/types.js";
 import type { ActiveTask } from "../state/types.js";
 import type { AgentReport } from "./types.js";
 
@@ -74,7 +75,13 @@ function redactText(input: string): SecretRedactionResult<string> {
 }
 
 export function containsSecretLikeText(input: string): boolean {
-  return patterns().some((pattern) => (input.match(pattern.expression) ?? []).length > 0);
+  return patterns().some((pattern) =>
+    (input.match(pattern.expression) ?? []).some((match) => !match.includes("[REDACTED]")),
+  );
+}
+
+export function checkpointContainsSecretLikeText(checkpoint: Checkpoint): boolean {
+  return containsSecretLikeText(JSON.stringify(checkpoint));
 }
 
 export function activeTaskContainsSecretLikeText(state: ActiveTask): boolean {
