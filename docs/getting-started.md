@@ -1,6 +1,6 @@
 # Getting started
 
-AgentFold currently supports safe initialization and basic project diagnostics. Run it from any directory inside an existing Git repository.
+AgentFold currently supports safe initialization, canonical project diagnostics, active-task reports, and immutable checkpoints. Run it from any directory inside an existing Git repository.
 
 ## Preview initialization
 
@@ -115,4 +115,30 @@ cat report.json | pnpm agentfold report --stdin
 
 Use `--agent codex` to supply an omitted agent or explicitly override the JSON `agent` field. Reports append and deduplicate semantic progress; they do not replace earlier conclusions. Validation commands are stored as reported text and are never executed.
 
-AgentFold redacts likely secrets before persistence, but developers and coding agents should not submit secrets, private reasoning, complete conversations, or transcripts. `checkpoint` and `resume` are planned for the next continuity task. Future agent integrations can submit this report structure automatically without exposing private conversations.
+AgentFold redacts likely secrets before persistence, but developers and coding agents should not submit secrets, private reasoning, complete conversations, or transcripts. Future agent integrations can submit this report structure automatically without exposing private conversations.
+
+## Create an immutable checkpoint
+
+Capture the active task, its previously reported semantic progress, and the current Git facts:
+
+```bash
+pnpm agentfold checkpoint
+```
+
+Checkpointing persists by default. Use `--dry-run` to capture and preview the same facts without creating history or updating active state:
+
+```bash
+pnpm agentfold checkpoint --dry-run
+```
+
+An integration can identify itself independently of the last semantic reporting agent:
+
+```bash
+pnpm agentfold checkpoint --agent codex
+```
+
+Git branch, HEAD, staged and unstaged status, repository-relative changed paths, aggregate numstat totals, and recent commit subjects are collected automatically. A path changed in both the index and working tree is counted once as a file, while its two Git numstat layers are summed; these are aggregate layer totals rather than a stored combined diff. Binary paths are counted without line totals. Semantic conclusions come only from earlier `report --stdin` submissions. A Git-only checkpoint is allowed with a warning; AgentFold does not infer decisions, blockers, failures, or next actions from a diff.
+
+History is stored under `.agentfold/state/history/` as deterministic Markdown with YAML front matter. Observed Git facts and agent-reported conclusions remain visibly separate. Checkpoints contain no full diff, source-file content, environment values, terminal transcript, or private reasoning. Untracked files are named but their contents and line counts are not inspected.
+
+Checkpointing never stages or commits files. Running it again without a meaningful Git or semantic change leaves both history and active state byte-for-byte unchanged. `agentfold resume` will be implemented next; future integrations can invoke report and checkpoint automatically without adding watchers or Git hooks.

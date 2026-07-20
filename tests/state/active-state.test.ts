@@ -124,4 +124,36 @@ describe("active task state", () => {
       "AF-20260720-005",
     );
   });
+
+  it("loads pre-checkpoint active state with safe revision defaults", () => {
+    const legacy = serializeActiveState(state())
+      .replace(/^report_revision:.*\n/mu, "")
+      .replace(/^latest_report_at:.*\n/mu, "")
+      .replace(/^[ ]{2}latest_checkpoint_id:.*\n/mu, "")
+      .replace(/^[ ]{2}latest_fingerprint:.*\n/mu, "")
+      .replace(/^[ ]{2}latest_semantic_revision:.*\n/mu, "");
+
+    expect(parseActiveState(legacy)).toMatchObject({
+      reportRevision: 0,
+      latestReportAt: null,
+      checkpointHistory: {
+        latestCheckpointId: null,
+        latestFingerprint: null,
+        latestSemanticRevision: 0,
+      },
+    });
+  });
+
+  it("rejects checkpoint semantic metadata newer than the active report revision", () => {
+    expect(
+      activeTaskSchema.safeParse({
+        ...state(),
+        reportRevision: 1,
+        checkpointHistory: {
+          ...state().checkpointHistory,
+          latestSemanticRevision: 2,
+        },
+      }).success,
+    ).toBe(false);
+  });
 });

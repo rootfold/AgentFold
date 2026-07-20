@@ -28,7 +28,10 @@ describe("NodeFileSystem", () => {
     await fileSystem.writeText(file, "AgentFold ✓");
 
     await expect(fileSystem.exists(file)).resolves.toBe(true);
-    await expect(fileSystem.realPath(file)).resolves.toBe(path.resolve(file));
+    const canonicalPath = await fileSystem.realPath(file);
+    expect(path.isAbsolute(canonicalPath)).toBe(true);
+    expect(path.basename(canonicalPath)).toBe("context.txt");
+    await expect(fileSystem.readText(canonicalPath)).resolves.toBe("AgentFold ✓");
     await expect(fileSystem.readText(file)).resolves.toBe("AgentFold ✓");
     expect(fileSystem.currentWorkingDirectory()).toBe(fixture);
   });

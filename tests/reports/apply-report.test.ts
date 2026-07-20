@@ -89,6 +89,8 @@ describe("prepareAgentReport", () => {
       startingBranch: fixture.initialState.startingBranch,
       startingCommit: fixture.initialState.startingCommit,
       lastAgent: "claude",
+      reportRevision: 1,
+      latestReportAt: reportTime.toISOString(),
       updatedAt: reportTime.toISOString(),
       completed: fullReport.completed,
       inProgress: fullReport.inProgress,
@@ -273,5 +275,8 @@ describe("prepareAgentReport", () => {
     await expect(
       fixture.fileSystem.exists(path.join(path.dirname(statePath), ".failed-report.tmp")),
     ).resolves.toBe(false);
+    const loaded = await loadActiveState(fixture.fileSystem, fixture.root);
+    if (loaded.status !== "success") throw new Error("Expected previous state");
+    expect(loaded.state.reportRevision).toBe(0);
   });
 });

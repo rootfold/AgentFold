@@ -1,4 +1,5 @@
 import { agentReportSchema } from "./agent-report-schema.js";
+import type { ActiveTask } from "../state/types.js";
 import type { AgentReport } from "./types.js";
 
 export interface SecretRedactionResult<T> {
@@ -70,6 +71,32 @@ function redactText(input: string): SecretRedactionResult<string> {
   });
 
   return { value, redactionCount, safe };
+}
+
+export function containsSecretLikeText(input: string): boolean {
+  return patterns().some((pattern) => (input.match(pattern.expression) ?? []).length > 0);
+}
+
+export function activeTaskContainsSecretLikeText(state: ActiveTask): boolean {
+  const values = [
+    state.title,
+    state.objective,
+    state.workingContext,
+    state.startingBranch,
+    state.currentBranch,
+    ...(state.startingAgent === undefined ? [] : [state.startingAgent]),
+    ...(state.lastAgent === undefined ? [] : [state.lastAgent]),
+    ...state.completed,
+    ...state.inProgress,
+    ...state.decisions.flatMap((item) => [item.decision, item.reason]),
+    ...state.failedAttempts.flatMap((item) => [item.attempt, item.result]),
+    ...state.blockers,
+    ...state.nextActions,
+    ...state.validation.flatMap((item) => [item.command, item.summary]),
+    ...state.assumptions,
+  ];
+
+  return values.some(containsSecretLikeText);
 }
 
 export function redactAgentReport(report: AgentReport): SecretRedactionResult<AgentReport> {

@@ -4,6 +4,7 @@ import type { FileSystem } from "../core/filesystem/filesystem.js";
 import type { GitInspector } from "../core/git/git-inspector.js";
 import type { GitRepositoryLocator } from "../core/git/git-repository-locator.js";
 import { packageVersion } from "../package-metadata.js";
+import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerReportCommand } from "./commands/report.js";
@@ -51,6 +52,7 @@ export function createProgram(options: CreateProgramOptions): Command {
   );
   registerStartCommand(program, options, options.output);
   registerReportCommand(program, options, options.output);
+  registerCheckpointCommand(program, options, options.output);
 
   return program;
 }

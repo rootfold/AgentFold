@@ -5,6 +5,11 @@ import path from "node:path";
 import { parseConfig } from "../../src/core/config/parse-config.js";
 import { serializeConfig } from "../../src/core/config/serialize-config.js";
 import { NodeFileSystem } from "../../src/core/filesystem/node-filesystem.js";
+import type {
+  CheckpointGitFacts,
+  CheckpointGitObservation,
+  CheckpointGitRequest,
+} from "../../src/core/git/checkpoint-git-types.js";
 import type { GitInspector, GitWorkingFacts } from "../../src/core/git/git-inspector.js";
 import { FilesystemGitRepositoryLocator } from "../../src/core/git/filesystem-git-repository-locator.js";
 import { AtomicInitializationWriter } from "../../src/core/initialization/atomic-writer.js";
@@ -23,6 +28,10 @@ export interface ContinuityFixture {
 export class StubGitInspector implements GitInspector {
   readonly factReads: string[] = [];
   readonly ignoreReads: { readonly root: string; readonly path: string }[] = [];
+  readonly checkpointReads: {
+    readonly root: string;
+    readonly request: CheckpointGitRequest;
+  }[] = [];
 
   constructor(
     readonly facts: GitWorkingFacts = {
@@ -31,6 +40,31 @@ export class StubGitInspector implements GitInspector {
       detached: false,
     },
     readonly ignored = false,
+    readonly checkpointFacts: CheckpointGitFacts = {
+      branch: facts.branch,
+      commit: facts.commit,
+      detached: facts.detached,
+      workingTree: "clean",
+      hasStagedChanges: false,
+      hasUnstagedChanges: false,
+      changedPaths: {
+        added: [],
+        modified: [],
+        deleted: [],
+        renamed: [],
+        copied: [],
+        untracked: [],
+        unmerged: [],
+      },
+      diffStatistics: {
+        filesChanged: 0,
+        insertions: 0,
+        deletions: 0,
+        binaryFiles: 0,
+        untrackedFiles: 0,
+      },
+      recentCommits: [],
+    },
   ) {}
 
   readWorkingFacts(repositoryRoot: string): Promise<GitWorkingFacts> {
@@ -41,6 +75,14 @@ export class StubGitInspector implements GitInspector {
   isPathIgnored(repositoryRoot: string, repositoryRelativePath: string): Promise<boolean> {
     this.ignoreReads.push({ root: repositoryRoot, path: repositoryRelativePath });
     return Promise.resolve(this.ignored);
+  }
+
+  readCheckpointFacts(
+    repositoryRoot: string,
+    request: CheckpointGitRequest,
+  ): Promise<CheckpointGitObservation> {
+    this.checkpointReads.push({ root: repositoryRoot, request });
+    return Promise.resolve({ facts: this.checkpointFacts, diagnostics: [] });
   }
 }
 

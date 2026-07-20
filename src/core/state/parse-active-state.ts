@@ -31,10 +31,15 @@ const frontMatterSchema = z
     current_commit: z.string().nullable(),
     starting_agent: z.string().optional(),
     last_agent: z.string().optional(),
+    report_revision: z.number().optional().default(0),
+    latest_report_at: z.string().nullable().optional().default(null),
     checkpoint_history: z
       .object({
         count: z.number(),
         latest_checkpoint_at: z.string().nullable(),
+        latest_checkpoint_id: z.string().nullable().optional().default(null),
+        latest_fingerprint: z.string().nullable().optional().default(null),
+        latest_semantic_revision: z.number().optional().default(0),
       })
       .strict(),
   })
@@ -214,6 +219,8 @@ export function parseActiveState(input: string): ActiveTask {
       ? {}
       : { startingAgent: frontMatter.starting_agent }),
     ...(frontMatter.last_agent === undefined ? {} : { lastAgent: frontMatter.last_agent }),
+    reportRevision: frontMatter.report_revision,
+    latestReportAt: frontMatter.latest_report_at,
     objective: sections.Objective.slice(2),
     completed: parseStringList(sections.Completed, "Completed"),
     inProgress: parseStringList(sections["In progress"], "In progress"),
@@ -226,6 +233,9 @@ export function parseActiveState(input: string): ActiveTask {
     checkpointHistory: {
       count: frontMatter.checkpoint_history.count,
       latestCheckpointAt: frontMatter.checkpoint_history.latest_checkpoint_at,
+      latestCheckpointId: frontMatter.checkpoint_history.latest_checkpoint_id,
+      latestFingerprint: frontMatter.checkpoint_history.latest_fingerprint,
+      latestSemanticRevision: frontMatter.checkpoint_history.latest_semantic_revision,
     },
   });
 

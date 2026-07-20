@@ -137,6 +137,8 @@ describe("report merge", () => {
     expect(merged.state.currentCommit).toBeNull();
     expect(merged.state.lastAgent).toBe("claude");
     expect(merged.state.updatedAt).toBe("2026-07-20T14:00:00.000Z");
+    expect(merged.state.reportRevision).toBe(1);
+    expect(merged.state.latestReportAt).toBe("2026-07-20T14:00:00.000Z");
     expect(merged.state.completed).toEqual([
       "Existing completion",
       "New completion 1",
@@ -179,6 +181,29 @@ describe("report merge", () => {
       { decision: "Existing decision", reason: "Existing reason" },
       { decision: "existing decision", reason: "Existing reason" },
     ]);
+  });
+
+  it("does not increment the semantic revision for a duplicate-only report", () => {
+    const original = activeTaskSchema.parse({
+      ...activeState(),
+      reportRevision: 3,
+      latestReportAt: "2026-07-20T13:00:00.000Z",
+    });
+    const report = parseAgentReport({
+      agent: "gemini",
+      completed: ["Existing completion"],
+      decisions: [{ decision: "Existing decision", reason: "Existing reason" }],
+    });
+
+    const merged = mergeAgentReport(original, report, {
+      updatedAt: "2026-07-20T14:00:00.000Z",
+      gitFacts: { branch: "main", commit: original.currentCommit, detached: false },
+    });
+
+    expect(merged.state.reportRevision).toBe(3);
+    expect(merged.state.latestReportAt).toBe("2026-07-20T13:00:00.000Z");
+    expect(merged.state.lastAgent).toBe("gemini");
+    expect(Object.values(merged.summary).every((count) => count === 0)).toBe(true);
   });
 });
 

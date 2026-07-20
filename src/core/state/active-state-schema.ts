@@ -24,6 +24,17 @@ export const checkpointHistoryMetadataSchema = z
   .object({
     count: z.number().int().nonnegative(),
     latestCheckpointAt: timestampSchema.nullable(),
+    latestCheckpointId: z
+      .string()
+      .regex(/^CP-\d{3}$/u)
+      .nullable()
+      .default(null),
+    latestFingerprint: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/u)
+      .nullable()
+      .default(null),
+    latestSemanticRevision: z.number().int().nonnegative().default(0),
   })
   .strict();
 
@@ -42,6 +53,8 @@ export const activeTaskSchema = z
     currentCommit: commitSchema,
     startingAgent: agentNameSchema.optional(),
     lastAgent: agentNameSchema.optional(),
+    reportRevision: z.number().int().nonnegative().default(0),
+    latestReportAt: timestampSchema.nullable().default(null),
     objective: objectiveSchema,
     completed: z.array(semanticTextSchema).max(1_000),
     inProgress: z.array(semanticTextSchema).max(1_000),
@@ -53,4 +66,13 @@ export const activeTaskSchema = z
     assumptions: z.array(semanticTextSchema).max(1_000),
     checkpointHistory: checkpointHistoryMetadataSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((state, context) => {
+    if (state.checkpointHistory.latestSemanticRevision > state.reportRevision) {
+      context.addIssue({
+        code: "custom",
+        path: ["checkpointHistory", "latestSemanticRevision"],
+        message: "Latest checkpoint semantic revision cannot exceed report revision",
+      });
+    }
+  });

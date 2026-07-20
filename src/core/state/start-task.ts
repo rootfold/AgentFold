@@ -190,6 +190,8 @@ export async function prepareTaskStart(
       startingCommit: gitFacts.commit,
       currentCommit: gitFacts.commit,
       ...(agent === undefined ? {} : { startingAgent: agent, lastAgent: agent }),
+      reportRevision: 0,
+      latestReportAt: null,
       objective: titleResult.data,
       completed: [],
       inProgress: [],
@@ -199,7 +201,13 @@ export async function prepareTaskStart(
       nextActions: [],
       validation: [],
       assumptions: [],
-      checkpointHistory: { count: 0, latestCheckpointAt: null },
+      checkpointHistory: {
+        count: 0,
+        latestCheckpointAt: null,
+        latestCheckpointId: null,
+        latestFingerprint: null,
+        latestSemanticRevision: 0,
+      },
     });
     const diagnostics: Diagnostic[] = [
       ...contextResult.diagnostics,

@@ -144,4 +144,57 @@ describe("continuity CLI", () => {
     expect(titleExit).toBe(2);
     expect(jsonExit).toBe(2);
   });
+
+  it("dry-runs and then persists a checkpoint by default without creating duplicates", async () => {
+    const fixture = await createContinuityFixture(temporaryDirectories);
+    const gitInspector = new StubGitInspector(undefined, true);
+    const startOutput = captureOutput();
+    await runCli(["node", "agentfold", "start", "Implement OAuth", "--yes"], {
+      ...fixture,
+      gitInspector,
+      stdinReader: new StringStdinReader(""),
+      output: startOutput.output,
+      now,
+    });
+    const statePath = path.join(fixture.root, ".agentfold", "state", "current.md");
+    const stateBefore = await fixture.fileSystem.readText(statePath);
+    const dryOutput = captureOutput();
+    const dryExit = await runCli(["node", "agentfold", "checkpoint", "--dry-run"], {
+      ...fixture,
+      gitInspector,
+      stdinReader: new StringStdinReader(""),
+      output: dryOutput.output,
+      now: () => new Date("2026-07-20T16:00:00.000Z"),
+    });
+    expect(dryExit).toBe(0);
+    expect(dryOutput.stdout()).toContain("Dry run complete");
+    await expect(fixture.fileSystem.readText(statePath)).resolves.toBe(stateBefore);
+
+    const checkpointOutput = captureOutput();
+    const checkpointOptions = {
+      ...fixture,
+      gitInspector,
+      stdinReader: new StringStdinReader(""),
+      output: checkpointOutput.output,
+      now: () => new Date("2026-07-20T16:00:00.000Z"),
+    };
+    const checkpointExit = await runCli(
+      ["node", "agentfold", "checkpoint", "--agent", "codex"],
+      checkpointOptions,
+    );
+    expect(checkpointExit).toBe(0);
+    expect(checkpointOutput.stdout()).toContain("Checkpoint: CP-001");
+    expect(checkpointOutput.stdout()).toContain("Created .agentfold/state/history/");
+
+    const duplicateOutput = captureOutput();
+    const duplicateExit = await runCli(["node", "agentfold", "checkpoint"], {
+      ...checkpointOptions,
+      output: duplicateOutput.output,
+    });
+    expect(duplicateExit).toBe(0);
+    expect(duplicateOutput.stdout()).toContain("No meaningful Git or semantic state changed");
+    await expect(
+      fixture.fileSystem.listDirectory(path.join(fixture.root, ".agentfold", "state", "history")),
+    ).resolves.toHaveLength(1);
+  });
 });

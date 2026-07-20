@@ -3,6 +3,12 @@ export { ConfigValidationError, parseConfig } from "./core/config/parse-config.j
 export { agentFoldConfigSchema } from "./core/config/schema.js";
 export { serializeConfig } from "./core/config/serialize-config.js";
 export type { AgentFoldConfig } from "./core/config/types.js";
+export { assembleCheckpoint } from "./core/checkpoints/assemble-checkpoint.js";
+export { checkpointSchema } from "./core/checkpoints/checkpoint-schema.js";
+export { createCheckpointFingerprint } from "./core/checkpoints/fingerprint.js";
+export { parseCheckpoint } from "./core/checkpoints/parse-checkpoint.js";
+export { serializeCheckpoint } from "./core/checkpoints/serialize-checkpoint.js";
+export type { Checkpoint } from "./core/checkpoints/types.js";
 export { loadCanonicalContext } from "./core/context/load-context.js";
 export type { LoadCanonicalContextDependencies } from "./core/context/load-context.js";
 export type {
@@ -18,6 +24,7 @@ export { formatDiagnostic } from "./core/diagnostics/format-diagnostic.js";
 export type { FileSystem } from "./core/filesystem/filesystem.js";
 export { NodeFileSystem } from "./core/filesystem/node-filesystem.js";
 export { FilesystemGitRepositoryLocator } from "./core/git/filesystem-git-repository-locator.js";
+export type { CheckpointGitFacts, DiffStatistics } from "./core/git/checkpoint-git-types.js";
 export type { GitRepositoryLocator } from "./core/git/git-repository-locator.js";
 export { agentReportSchema } from "./core/reports/agent-report-schema.js";
 export { mergeAgentReport } from "./core/reports/merge-report.js";

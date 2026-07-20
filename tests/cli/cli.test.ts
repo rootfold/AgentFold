@@ -33,6 +33,7 @@ describe("AgentFold CLI", () => {
     expect(captured.stdout()).toContain("init");
     expect(captured.stdout()).toContain("start");
     expect(captured.stdout()).toContain("report");
+    expect(captured.stdout()).toContain("checkpoint");
     expect(captured.stderr()).toBe("");
   });
 

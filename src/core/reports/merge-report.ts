@@ -51,6 +51,16 @@ export function mergeAgentReport(
     JSON.stringify([item.command, item.status, item.summary]),
   );
   const assumptions = appendUnique(state.assumptions, report.assumptions, String);
+  const semanticChangeCount =
+    completed.added +
+    inProgress.added +
+    decisions.added +
+    failedAttempts.added +
+    blockers.added +
+    nextActions.added +
+    validation.added +
+    assumptions.added;
+  const hasSemanticChanges = semanticChangeCount > 0;
 
   return {
     state: activeTaskSchema.parse({
@@ -59,6 +69,8 @@ export function mergeAgentReport(
       currentBranch: options.gitFacts.branch,
       currentCommit: options.gitFacts.commit,
       ...(report.agent === undefined ? {} : { lastAgent: report.agent }),
+      reportRevision: state.reportRevision + (hasSemanticChanges ? 1 : 0),
+      latestReportAt: hasSemanticChanges ? options.updatedAt : state.latestReportAt,
       completed: completed.values,
       inProgress: inProgress.values,
       decisions: decisions.values,

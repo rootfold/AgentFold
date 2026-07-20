@@ -49,9 +49,14 @@ export function serializeActiveState(input: ActiveTask): string {
     current_commit: state.currentCommit,
     ...(state.startingAgent === undefined ? {} : { starting_agent: state.startingAgent }),
     ...(state.lastAgent === undefined ? {} : { last_agent: state.lastAgent }),
+    report_revision: state.reportRevision,
+    latest_report_at: state.latestReportAt,
     checkpoint_history: {
       count: state.checkpointHistory.count,
       latest_checkpoint_at: state.checkpointHistory.latestCheckpointAt,
+      latest_checkpoint_id: state.checkpointHistory.latestCheckpointId,
+      latest_fingerprint: state.checkpointHistory.latestFingerprint,
+      latest_semantic_revision: state.checkpointHistory.latestSemanticRevision,
     },
   };
   const yaml = stringifyYaml(frontMatter, { indent: 2, lineWidth: 0 }).trimEnd();
