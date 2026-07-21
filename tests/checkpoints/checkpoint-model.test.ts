@@ -123,6 +123,13 @@ describe("checkpoint model", () => {
     expect(value.observedGit.changedPaths.untracked[0]).toContain(" ");
   });
 
+  it("loads existing checkpoints without lifecycle fields as progress checkpoints", () => {
+    const value = checkpoint();
+    const legacy = serializeCheckpoint(value).replace("kind: progress\n", "");
+
+    expect(parseCheckpoint(legacy)).toEqual(value);
+  });
+
   it("rejects invalid versions, IDs, task mismatches, complete-diff fields, and body drift", () => {
     const value = checkpoint();
     const serialized = serializeCheckpoint(value);
@@ -168,6 +175,22 @@ describe("checkpoint model", () => {
 });
 
 describe("checkpoint fingerprints", () => {
+  it("distinguishes final lifecycle checkpoints even when Git and semantic state are unchanged", () => {
+    const progress = checkpoint();
+    const final = assembleCheckpoint({
+      activeTask: state(),
+      gitFacts: facts(),
+      checkpointId: "CP-002",
+      createdAt: progress.createdAt,
+      checkpointAgent: "codex",
+      kind: "final",
+    });
+
+    expect(final).toMatchObject({ kind: "final", taskStatus: "completed" });
+    expect(final.fingerprint).not.toBe(progress.fingerprint);
+    expect(parseCheckpoint(serializeCheckpoint(final))).toEqual(final);
+  });
+
   it("ignores timestamp and checkpointing agent but changes for meaningful inputs", () => {
     const first = checkpoint("2026-07-20T18:30:00.000Z");
     const later = assembleCheckpoint({

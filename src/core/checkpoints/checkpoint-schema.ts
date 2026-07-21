@@ -94,6 +94,8 @@ export const checkpointReportedStateSchema = z
 export const checkpointSchema = z
   .object({
     schemaVersion: z.literal(1),
+    kind: z.enum(["progress", "final"]).default("progress"),
+    taskStatus: z.literal("completed").optional(),
     checkpointId: z.string().regex(/^CP-\d{3}$/u, "Must be a valid checkpoint ID"),
     taskId: z.string().regex(/^AF-\d{8}-\d{3}$/u, "Must be a valid AgentFold task ID"),
     taskTitle: taskTitleSchema,
@@ -109,6 +111,20 @@ export const checkpointSchema = z
   })
   .strict()
   .superRefine((checkpoint, context) => {
+    if (checkpoint.kind === "final" && checkpoint.taskStatus !== "completed") {
+      context.addIssue({
+        code: "custom",
+        path: ["taskStatus"],
+        message: "Final checkpoints must record completed task status",
+      });
+    }
+    if (checkpoint.kind === "progress" && checkpoint.taskStatus !== undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["taskStatus"],
+        message: "Progress checkpoints cannot record completed task status",
+      });
+    }
     if (checkpoint.semanticRevision === 0 && checkpoint.semanticFreshness !== "none") {
       context.addIssue({
         code: "custom",

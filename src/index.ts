@@ -9,6 +9,14 @@ export { ConfigValidationError, parseConfig } from "./core/config/parse-config.j
 export { agentFoldConfigSchema } from "./core/config/schema.js";
 export { serializeConfig } from "./core/config/serialize-config.js";
 export type { AgentFoldConfig } from "./core/config/types.js";
+export {
+  completionInputSchema,
+  parseCompletionInput,
+} from "./core/completion/completion-input-schema.js";
+export { completedTaskSchema } from "./core/completion/completed-task-schema.js";
+export { parseCompletedTask } from "./core/completion/parse-completed-task.js";
+export { serializeCompletedTask } from "./core/completion/serialize-completed-task.js";
+export type { CompletedTask, CompletedTaskIdentity } from "./core/completion/types.js";
 export { assembleCheckpoint } from "./core/checkpoints/assemble-checkpoint.js";
 export { checkpointSchema } from "./core/checkpoints/checkpoint-schema.js";
 export { createCheckpointFingerprint } from "./core/checkpoints/fingerprint.js";

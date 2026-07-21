@@ -1,4 +1,4 @@
-import { agentReportSchema } from "./agent-report-schema.js";
+import { agentReportFieldsSchema } from "./agent-report-schema.js";
 import type { Checkpoint } from "../checkpoints/types.js";
 import type { ActiveTask } from "../state/types.js";
 import type { AgentReport } from "./types.js";
@@ -49,7 +49,7 @@ function patterns(): readonly RedactionPattern[] {
   ];
 }
 
-function redactText(input: string): SecretRedactionResult<string> {
+export function redactSecretLikeText(input: string): SecretRedactionResult<string> {
   let value = input;
   let redactionCount = 0;
 
@@ -110,12 +110,12 @@ export function redactAgentReport(report: AgentReport): SecretRedactionResult<Ag
   let redactionCount = 0;
   let safe = true;
   const redact = (value: string): string => {
-    const result = redactText(value);
+    const result = redactSecretLikeText(value);
     redactionCount += result.redactionCount;
     safe &&= result.safe;
     return result.value;
   };
-  const value = agentReportSchema.parse({
+  const value = agentReportFieldsSchema.parse({
     ...(report.agent === undefined ? {} : { agent: redact(report.agent) }),
     completed: report.completed.map(redact),
     inProgress: report.inProgress.map(redact),

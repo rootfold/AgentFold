@@ -10,10 +10,11 @@
 - `agentfold_begin_task` creates validated active-task state.
 - `agentfold_report_progress` validates, redacts, and merges structured semantic progress.
 - `agentfold_create_checkpoint` captures bounded Git facts and immutable semantic state.
+- `agentfold_finish_task` validates readiness, creates a final checkpoint and completed archive, then clears active state.
 - `agentfold_get_resume_packet` reads a deterministic JSON or Markdown continuation packet.
 - `agentfold_close_session` optionally reports, checkpoints, returns a resume packet, and marks the in-memory session closed.
 
-The recommended lifecycle is open session, continue a matching active task or explicitly begin a requested new task, report meaningful progress, and close the session before returning control or switching agents. Reports contain concise engineering conclusions—not private chain of thought, secrets, full conversations, or terminal transcripts.
+The recommended lifecycle is open session, continue a matching active task or explicitly begin a requested new task, and report meaningful progress. Use `agentfold_finish_task` only when the requested scope is complete, blockers and in-progress entries are resolved, and required validation is honestly reported. The session remains open, so a later substantive request can begin a new task. Use `agentfold_close_session` with checkpointing when work is paused, incomplete, blocked, uncertain, or handed off. Closing after a successful finish creates no extra checkpoint. Reports contain concise engineering conclusions—not private chain of thought, secrets, full conversations, or terminal transcripts.
 
 One MCP process serves exactly one Git repository. The workspace is resolved and locked before the first workspace-dependent tool call, tools cannot switch it, and normal results contain only repository-relative paths. AgentFold never stages, commits, resets, stashes, pushes, creates branches, edits hooks, or changes remotes.
 
@@ -103,4 +104,4 @@ Do not assume either snippet matches a particular application without checking t
 
 ## Current limitations
 
-Service session metadata remains intentionally in memory and is lost on service restart. Shutdown does not create a report or checkpoint solely because the process is stopping. There is no watcher, HTTP transport, operating-system service installer, Codex connector, or generic IDE connector. The Antigravity connector is intentionally limited to local registration, an owned workspace rule, verification, and safe removal. Embedded mode still has per-process sessions and no cross-application automation.
+Service session metadata remains intentionally in memory and is lost on service restart. Shutdown does not create a report or checkpoint solely because the process is stopping. Completed tasks cannot be reopened or deleted. There is no watcher, HTTP transport, operating-system service installer, or generic IDE connector. Embedded mode still has per-process sessions and no cross-application automation.

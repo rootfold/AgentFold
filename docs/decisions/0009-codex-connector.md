@@ -6,7 +6,7 @@
 
 ## Context
 
-AgentFold already exposes eight continuity tools through a local stdio MCP server and coordinates clients through an authenticated local service. Codex needs only a stable global MCP registration and repository instructions; it must not gain a separate implementation of tasks, reports, checkpoints, resume packets, heartbeats, or recovery.
+AgentFold exposes nine continuity tools through a local stdio MCP server and coordinates clients through an authenticated local service. Codex needs only a stable global MCP registration and repository instructions; it must not gain a separate implementation of tasks, reports, checkpoints, completion archives, resume packets, heartbeats, or recovery.
 
 Codex CLI, the IDE extension, and the ChatGPT desktop app share Codex configuration for the same host. Codex also reads repository-root `AGENTS.md`, while Git worktrees are independent working directories with shared Git metadata. These facts permit one global MCP entry with one instruction region per worktree.
 
@@ -65,7 +65,7 @@ Apply revalidates previewed bytes immediately before atomic writes. A later fail
 
 ### Verification boundaries
 
-Verification checks initialization, ownership, exact managed fingerprints, the executable descriptor, worktree identity, direct MCP initialization through the official SDK, all eight tools, `agentfold_get_status`, workspace auto-resolution, and service auto-start. When a Codex executable is safely discovered, it also runs read-only `codex mcp list --json` with the selected `CODEX_HOME`.
+Verification checks initialization, ownership, exact managed fingerprints, the executable descriptor, worktree identity, direct MCP initialization through the official SDK, all nine tools, `agentfold_get_status`, workspace auto-resolution, and service auto-start. When a Codex executable is safely discovered, it also runs read-only `codex mcp list --json` with the selected `CODEX_HOME`.
 
 Static config verification does not prove that an already-running desktop app or IDE extension has reloaded the file. AgentFold reports each selected surface separately and asks the user to restart or refresh Codex before confirming `agentfold` is enabled.
 

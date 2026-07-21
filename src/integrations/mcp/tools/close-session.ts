@@ -29,6 +29,38 @@ export async function closeSession(
   const session = requireOpenSession(context, operation, parsed.data.sessionId);
   if (!session.success) return session.result;
 
+  if (session.session.activeTaskId === undefined) {
+    const closed = context.sessions.close(parsed.data.sessionId);
+    if (closed === undefined) {
+      return mcpFailure(operation, "closed_session", [
+        diagnostic("AFMCP005", "error", "The MCP session could not be marked closed."),
+      ]);
+    }
+    return mcpSuccess(
+      operation,
+      "session_closed",
+      {
+        sessionId: closed.sessionId,
+        taskId: null,
+        reportRevision: null,
+        reportStatus: "not_submitted",
+        checkpointStatus: "not_requested",
+        checkpointId: null,
+        duplicateCheckpoint: false,
+        resumePacket: null,
+        closedAt: closed.closedAt,
+      },
+      [
+        diagnostic(
+          "AFMCP019",
+          "info",
+          "The session had no active task; no report or checkpoint was created.",
+        ),
+        diagnostic("AFMCP011", "success", "MCP session closed."),
+      ],
+    );
+  }
+
   let reportResult: AgentFoldMcpResult | undefined;
   if (parsed.data.finalReport !== undefined) {
     reportResult = await reportProgress(context, {

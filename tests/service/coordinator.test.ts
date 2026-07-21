@@ -25,6 +25,81 @@ function data(result: unknown): Record<string, unknown> {
 }
 
 describe("AgentFold service coordinator", () => {
+  it("finishes task A, begins task B in the same service session, and resumes only task B", async () => {
+    const fixture = await createContinuityFixture(temporaryDirectories, {
+      name: "agentfold-service-finish-e2e-",
+    });
+    const inspector = new StubGitInspector(undefined, true);
+    let now = new Date("2026-07-21T04:00:00.000Z");
+    let sequence = 0;
+    const coordinator = new AgentFoldServiceCoordinator({
+      version: "0.0.0-test",
+      startedAt: now.toISOString(),
+      processId: 4321,
+      endpointKind: process.platform === "win32" ? "named-pipe" : "unix-socket",
+      fileSystem: fixture.fileSystem,
+      gitRepositoryLocator: fixture.gitRepositoryLocator,
+      gitInspector: inspector,
+      now: () => now,
+      generateSessionId: () => `finish-${++sequence}`,
+    });
+    const opened = await coordinator.handle("session.open", {
+      workspace: fixture.root,
+      client: "codex-app",
+      agent: "codex",
+      target: "codex",
+      resumeFormat: "json",
+    });
+    const sessionId = String(data(opened).sessionId);
+    const startedA = await coordinator.handle("integration.begin_task", {
+      sessionId,
+      title: "Task A",
+    });
+    const taskA = String(data(startedA).taskId);
+    await coordinator.handle("integration.report_progress", {
+      sessionId,
+      completed: ["Implemented A"],
+      validation: [{ command: "pnpm test", status: "passed", summary: "All passed" }],
+    });
+    await coordinator.handle("integration.create_checkpoint", { sessionId });
+    now = new Date("2026-07-21T04:30:00.000Z");
+    const finished = await coordinator.handle("integration.finish_task", {
+      sessionId,
+      summary: "Task A complete.",
+      finalReport: { completed: ["Verified A"] },
+    });
+    expect((finished as { status: string }).status).toBe("task_finished");
+    expect(coordinator.sessions.get(sessionId)?.activeTaskId).toBeUndefined();
+    await expect(
+      fixture.fileSystem.exists(path.join(fixture.root, ".agentfold", "state", "current.md")),
+    ).resolves.toBe(false);
+    await expect(
+      fixture.fileSystem.exists(
+        path.join(fixture.root, ".agentfold", "state", "completed", `${taskA}.md`),
+      ),
+    ).resolves.toBe(true);
+
+    now = new Date("2026-07-21T04:31:00.000Z");
+    const startedB = await coordinator.handle("integration.begin_task", {
+      sessionId,
+      title: "Task B",
+    });
+    const taskB = String(data(startedB).taskId);
+    expect(taskB).not.toBe(taskA);
+    await coordinator.handle("session.close", { sessionId });
+
+    const nextAgent = await coordinator.handle("session.open", {
+      workspace: fixture.root,
+      client: "antigravity-app",
+      agent: "antigravity",
+      target: "antigravity",
+      resumeFormat: "json",
+    });
+    expect((nextAgent as { status: string }).status).toBe("resumable");
+    expect(data(nextAgent)).toMatchObject({ task: { taskId: taskB } });
+    expect(JSON.stringify(nextAgent)).not.toContain(taskA);
+  }, 30_000);
+
   it("shares sessions, checkpoints an agent switch, resumes, and recovers a stale lease", async () => {
     const fixture = await createContinuityFixture(temporaryDirectories, {
       name: "agentfold service repository with spaces ",

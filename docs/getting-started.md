@@ -1,6 +1,6 @@
 # Getting started
 
-AgentFold currently supports safe initialization, canonical project diagnostics, active-task reports, immutable checkpoints, continuation packets, and a local MCP boundary. Run it from any directory inside an existing Git repository.
+AgentFold currently supports safe initialization, canonical project diagnostics, active-task reports, immutable checkpoints, completed-task archives, continuation packets, and a local MCP boundary. Run it from any directory inside an existing Git repository.
 
 ## Preview initialization
 
@@ -160,6 +160,44 @@ History is stored under `.agentfold/state/history/` as deterministic Markdown wi
 
 Checkpointing never stages or commits files. Running it again without a meaningful Git or semantic change leaves both history and active state byte-for-byte unchanged.
 
+## Finish a completed task
+
+`checkpoint` preserves unfinished or paused work. `finish` records that the requested scope is complete. Preview is the default and writes nothing:
+
+```bash
+pnpm agentfold finish
+pnpm agentfold finish --dry-run
+```
+
+Finish an already-ready active task non-interactively:
+
+```bash
+pnpm agentfold finish --agent codex --yes
+```
+
+For a final report and exact resolutions, pipe structured JSON:
+
+```powershell
+Get-Content .\completion.json -Raw | pnpm agentfold finish --stdin --yes
+```
+
+```json
+{
+  "summary": "Implemented and validated GitHub OAuth.",
+  "finalReport": {
+    "completed": ["Added callback and session persistence"],
+    "validation": [{ "command": "pnpm test", "status": "passed", "summary": "All tests passed" }]
+  },
+  "resolvedInProgress": ["Persisting the OAuth session cookie"],
+  "resolvedBlockers": ["Callback integration test was failing"],
+  "followUp": ["Consider provider metrics separately"]
+}
+```
+
+Resolution text must exactly match the normalized active entry. Omitting an entry does not silently resolve it, and any remaining in-progress work or blocker prevents completion. Reported validation is stored honestly and never executed.
+
+A successful finish creates one immutable `kind: final` checkpoint under `.agentfold/state/history/`, archives a human-readable record at `.agentfold/state/completed/<task-id>.md`, and only then removes `.agentfold/state/current.md`. Existing history remains intact. Run `start` for the next substantive task; completed tasks cannot currently be reopened or deleted.
+
 ## Resume from a checkpoint
 
 Render the latest immutable checkpoint for the active task as Markdown on standard output:
@@ -191,7 +229,7 @@ Start one stdio MCP process for the containing Git repository:
 pnpm agentfold mcp --workspace .
 ```
 
-The server lets a compatible host open a session, read bounded context, begin a task, report progress, checkpoint, resume, and close the session through the same validated core used by the CLI commands. It has no network listener and writes protocol messages only to standard output. Safe debug lifecycle messages are available with `--debug` on standard error.
+The server lets a compatible host open a session, read bounded context, begin a task, report progress, checkpoint, finish, resume, and close the session through the same validated core used by the CLI commands. It has no network listener and writes protocol messages only to standard output. Safe debug lifecycle messages are available with `--debug` on standard error.
 
 The default `--service auto` mode uses the shared service when available and otherwise warns on stderr before preserving embedded behavior. For cross-application coordination:
 

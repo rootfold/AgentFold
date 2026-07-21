@@ -66,7 +66,7 @@ function connectorDependencies(
       Promise.resolve({
         host: "antigravity",
         valid: true,
-        toolsAvailable: 8,
+        toolsAvailable: 9,
         serviceAvailable: true,
         exitCode: 0,
         diagnostics: [],
@@ -147,7 +147,7 @@ describe("Antigravity connector operations", () => {
             ? { ...testDescriptor, fingerprint: "b".repeat(64) }
             : testDescriptor,
         ),
-      launchMcp: () => Promise.resolve({ toolsAvailable: 8 }),
+      launchMcp: () => Promise.resolve({ toolsAvailable: 9 }),
     });
     expect(result.valid).toBe(false);
     expect(result.diagnostics.some((item) => item.code === diagnosticCode)).toBe(true);

@@ -4,6 +4,7 @@ import { beginTask } from "../mcp/tools/begin-task.js";
 import { closeSession } from "../mcp/tools/close-session.js";
 import { createCheckpoint } from "../mcp/tools/create-checkpoint.js";
 import { getContext } from "../mcp/tools/get-context.js";
+import { finishTask } from "../mcp/tools/finish-task.js";
 import { getResumePacket } from "../mcp/tools/get-resume-packet.js";
 import { getStatus } from "../mcp/tools/get-status.js";
 import { openSession } from "../mcp/tools/open-session.js";
@@ -21,6 +22,7 @@ export interface AgentFoldIntegrationOperations {
   readonly beginTask: (input: unknown) => Promise<AgentFoldMcpResult>;
   readonly reportProgress: (input: unknown) => Promise<AgentFoldMcpResult>;
   readonly createCheckpoint: (input: unknown) => Promise<AgentFoldMcpResult>;
+  readonly finishTask: (input: unknown) => Promise<AgentFoldMcpResult>;
   readonly getResumePacket: (input: unknown) => Promise<AgentFoldMcpResult>;
   readonly closeSession: (input: unknown) => Promise<AgentFoldMcpResult>;
 }
@@ -35,6 +37,7 @@ export function createAgentFoldIntegrationOperations(
     beginTask: (input) => beginTask(context, input),
     reportProgress: (input) => reportProgress(context, input),
     createCheckpoint: (input) => createCheckpoint(context, input),
+    finishTask: (input) => finishTask(context, input),
     getResumePacket: (input) => getResumePacket(context, input),
     closeSession: (input) => closeSession(context, input),
   };

@@ -9,6 +9,8 @@ import type { Checkpoint } from "./types.js";
 const frontMatterSchema = z
   .object({
     schema: z.literal(1),
+    kind: z.enum(["progress", "final"]).optional().default("progress"),
+    task_status: z.literal("completed").optional(),
     checkpoint_id: z.string(),
     task_id: z.string(),
     task_title: z.string(),
@@ -112,6 +114,8 @@ export function parseCheckpoint(input: string, expectedTaskId?: string): Checkpo
   const git = value.observed_git;
   const checkpointResult = checkpointSchema.safeParse({
     schemaVersion: value.schema,
+    kind: value.kind,
+    ...(value.task_status === undefined ? {} : { taskStatus: value.task_status }),
     checkpointId: value.checkpoint_id,
     taskId: value.task_id,
     taskTitle: value.task_title,
@@ -165,6 +169,8 @@ export function parseCheckpoint(input: string, expectedTaskId?: string): Checkpo
   }
 
   const calculatedFingerprint = createCheckpointFingerprint({
+    kind: checkpoint.kind,
+    ...(checkpoint.taskStatus === undefined ? {} : { taskStatus: checkpoint.taskStatus }),
     taskId: checkpoint.taskId,
     currentBranch: checkpoint.observedGit.currentBranch,
     currentCommit: checkpoint.observedGit.currentCommit,

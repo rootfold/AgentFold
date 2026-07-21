@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { completionInputSchema } from "../../core/completion/completion-input-schema.js";
 import { agentReportSchema } from "../../core/reports/agent-report-schema.js";
 import { resumeFormatSchema, resumeTargetSchema } from "../../core/resume/resume-packet-schema.js";
 import {
@@ -50,6 +51,18 @@ export const createCheckpointInputSchema = z
   })
   .strict();
 
+export const finishTaskInputSchema = z
+  .object({
+    sessionId: sessionIdSchema,
+    agent: completionInputSchema.shape.agent,
+    summary: completionInputSchema.shape.summary,
+    finalReport: completionInputSchema.shape.finalReport,
+    resolvedInProgress: completionInputSchema.shape.resolvedInProgress,
+    resolvedBlockers: completionInputSchema.shape.resolvedBlockers,
+    followUp: completionInputSchema.shape.followUp,
+  })
+  .strict();
+
 export const getResumePacketInputSchema = z
   .object({
     sessionId: sessionIdSchema,
@@ -89,5 +102,6 @@ export type OpenSessionInput = z.infer<typeof openSessionInputSchema>;
 export type BeginTaskInput = z.infer<typeof beginTaskInputSchema>;
 export type ReportProgressInput = z.infer<typeof reportProgressInputSchema>;
 export type CreateCheckpointInput = z.infer<typeof createCheckpointInputSchema>;
+export type FinishTaskInput = z.infer<typeof finishTaskInputSchema>;
 export type GetResumePacketInput = z.infer<typeof getResumePacketInputSchema>;
 export type CloseSessionInput = z.infer<typeof closeSessionInputSchema>;

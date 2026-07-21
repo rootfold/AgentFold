@@ -200,7 +200,7 @@ describe("built Antigravity connector workflow", () => {
         repositoryRoot,
         env,
       );
-      expect((await first.client.listTools()).tools).toHaveLength(8);
+      expect((await first.client.listTools()).tools).toHaveLength(9);
       const opened = await first.client.callTool({
         name: agentFoldMcpToolNames.openSession,
         arguments: { client: "antigravity-ide", agent: "antigravity", target: "antigravity" },
@@ -244,7 +244,7 @@ describe("built Antigravity connector workflow", () => {
 
       const verified = await runCli("verify", "antigravity");
       expect(verified.stdout).toContain("verification passed");
-      expect(verified.stdout).toContain("Tools: 8");
+      expect(verified.stdout).toContain("Tools: 9");
       const disconnected = await runCli("disconnect", "antigravity", "--yes");
       expect(disconnected.stdout).toContain("service was left running");
       const after = JSON.parse(await readFile(configPath, "utf8")) as {

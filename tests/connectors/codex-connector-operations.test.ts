@@ -97,7 +97,7 @@ function dependencies(
       Promise.resolve({
         host: "codex",
         valid: true,
-        toolsAvailable: 8,
+        toolsAvailable: 9,
         serviceAvailable: true,
         exitCode: 0,
         diagnostics: [],
@@ -164,7 +164,7 @@ describe("Codex connector operations", () => {
             ? { ...testDescriptor, fingerprint: "d".repeat(64) }
             : testDescriptor,
         ),
-      launchMcp: () => Promise.resolve({ toolsAvailable: 8, statusVerified: true }),
+      launchMcp: () => Promise.resolve({ toolsAvailable: 9, statusVerified: true }),
     });
     expect(result.valid).toBe(false);
     expect(result.diagnostics.some((item) => item.code === code)).toBe(true);

@@ -53,12 +53,12 @@ Exact config backups live in restrictive AgentFold user state outside the reposi
 AgentFold owns only this region in repository-root `AGENTS.md`:
 
 ```text
-<!-- agentfold:codex:start schema=1 -->
+<!-- agentfold:codex:start schema=2 -->
 ...
 <!-- agentfold:codex:end -->
 ```
 
-The instructions tell Codex to open a session before substantive edits, continue a relevant task, begin only when necessary, report meaningful milestones, close with a concise final report and checkpoint enabled, preserve uncommitted work, and treat weak semantic context cautiously. They forbid private chain of thought, complete conversations, secrets, environment values, automatic commits or pushes, discarded work, task-per-message behavior, and replacing unrelated work without confirmation.
+The instructions tell Codex to open a session before substantive edits, continue a relevant task, begin only when necessary, and report meaningful milestones. Fully complete work uses `agentfold_finish_task`; paused, incomplete, blocked, uncertain, or handed-off work uses `agentfold_close_session` with checkpointing. After finish, a new substantive request begins a new task in the same open session. They forbid private chain of thought, complete conversations, secrets, environment values, automatic commits or pushes, discarded work, task-per-message behavior, and replacing unrelated work without confirmation.
 
 User content outside the region is preserved byte-for-byte where practical. Missing files are created; existing files are appended; identical regions are unchanged; modified or duplicate regions are conflicts. AgentFold does not install a Codex skill, plugin, hook, `notify` handler, or IDE extension.
 
@@ -82,7 +82,7 @@ Verification is read-only. It checks:
 - the owned `AGENTS.md` region;
 - service auto-start and authenticated local IPC;
 - official SDK MCP initialization and workspace roots;
-- all eight AgentFold tools and `agentfold_get_status`;
+- all nine AgentFold tools and `agentfold_get_status`;
 - read-only `codex mcp list --json` when a Codex CLI executable is available.
 
 CLI, IDE, and app results are reported separately. Static verification cannot prove a running UI has reloaded config. After installation or an update:
@@ -90,7 +90,7 @@ CLI, IDE, and app results are reported separately. Static verification cannot pr
 1. Restart Codex desktop, or restart the Codex IDE extension.
 2. Open MCP servers (or use `/mcp` in the CLI/TUI).
 3. Confirm `agentfold` is present and enabled.
-4. Inspect the eight lifecycle tools.
+4. Inspect the nine lifecycle tools.
 
 ## Disconnect
 
@@ -105,7 +105,7 @@ Disconnect is preview-only without `--yes`. It rechecks fingerprints and removes
 
 ## MCP tools and continuity
 
-Codex consumes the existing eight tools: status, bounded canonical context, open session, begin task, progress report, checkpoint, resume packet, and close session. Closing with checkpoint enabled lets a later Antigravity or other connected client receive the bounded continuation packet. The connector does not duplicate this logic.
+Codex consumes the nine tools: status, bounded canonical context, open session, begin task, progress report, checkpoint, finish, resume packet, and close session. Finish archives completed work and keeps the host session open; close with checkpoint enabled preserves unfinished work for a later Antigravity or other connected client. The connector does not duplicate this logic.
 
 ## Privacy and current limits
 

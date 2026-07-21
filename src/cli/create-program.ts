@@ -9,6 +9,7 @@ import type { CodexConnectorDependencies } from "../integrations/connectors/code
 import { packageVersion } from "../package-metadata.js";
 import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerFinishCommand } from "./commands/finish.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerReportCommand } from "./commands/report.js";
@@ -67,6 +68,7 @@ export function createProgram(options: CreateProgramOptions): Command {
   registerStartCommand(program, options, options.output);
   registerReportCommand(program, options, options.output);
   registerCheckpointCommand(program, options, options.output);
+  registerFinishCommand(program, options, options.output);
   registerResumeCommand(program, options, options.output);
   registerServiceCommand(
     program,

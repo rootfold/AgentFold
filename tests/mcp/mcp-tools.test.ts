@@ -94,6 +94,92 @@ async function createHarness(
 }
 
 describe("AgentFold MCP tools", () => {
+  it("finishes task A and begins task B in the same open MCP session", async () => {
+    const harness = await createHarness({ name: "agentfold-mcp-finish-lifecycle-" });
+    const opened = await harness.handlers.openSession({ client: "codex", agent: "codex" });
+    const sessionId = String(data(opened).sessionId);
+    const startedA = await harness.handlers.beginTask({ sessionId, title: "Task A" });
+    const taskA = String(data(startedA).taskId);
+    await harness.handlers.reportProgress({
+      sessionId,
+      completed: ["Implemented task A"],
+      validation: [{ command: "pnpm test", status: "passed", summary: "All passed" }],
+    });
+    await harness.handlers.createCheckpoint({ sessionId });
+
+    const finished = await harness.handlers.finishTask({
+      sessionId,
+      summary: "Task A is implemented and validated.",
+      finalReport: { completed: ["Verified task A end to end"] },
+    });
+
+    expect(finished.status).toBe("task_finished");
+    expect(data(finished)).toMatchObject({
+      taskId: taskA,
+      finalCheckpointId: "CP-002",
+      archivePath: `.agentfold/state/completed/${taskA}.md`,
+      validationSummary: { total: 1, passed: 1, failed: 0 },
+    });
+    expect(harness.sessions.requireOpen(sessionId).status).toBe("open");
+    expect(harness.sessions.get(sessionId)?.activeTaskId).toBeUndefined();
+    await expect(
+      harness.fileSystem.exists(path.join(harness.root, ".agentfold", "state", "current.md")),
+    ).resolves.toBe(false);
+    await expect(
+      harness.fileSystem.exists(
+        path.join(harness.root, ".agentfold", "state", "history", `${taskA}-CP-001.md`),
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      harness.fileSystem.exists(
+        path.join(harness.root, ".agentfold", "state", "history", `${taskA}-CP-002.md`),
+      ),
+    ).resolves.toBe(true);
+    const completedStatus = await harness.handlers.getStatus({});
+    expect(data(completedStatus)).toMatchObject({
+      activeTask: null,
+      latestCompletedTaskId: taskA,
+      latestCompletedFinalCheckpointId: "CP-002",
+    });
+    const openedAfterFinish = await harness.handlers.openSession({
+      client: "same-host-second-surface",
+      agent: "codex",
+    });
+    expect(openedAfterFinish.status).toBe("no_active_task");
+    expect(openedAfterFinish.diagnostics.some((item) => item.code === "AFMCP020")).toBe(true);
+
+    const startedB = await harness.handlers.beginTask({ sessionId, title: "Task B" });
+    const taskB = String(data(startedB).taskId);
+    expect(taskB).not.toBe(taskA);
+    const closedB = await harness.handlers.closeSession({ sessionId });
+    expect(closedB.status).toBe("session_closed");
+
+    const continuation = await harness.handlers.openSession({
+      client: "antigravity",
+      agent: "antigravity",
+    });
+    expect(continuation.status).toBe("resumable");
+    expect(data(continuation)).toMatchObject({ task: { taskId: taskB } });
+    expect(JSON.stringify(continuation)).not.toContain(taskA);
+  }, 30_000);
+
+  it("closes cleanly without a checkpoint after finish clears the session task", async () => {
+    const harness = await createHarness({ name: "agentfold-mcp-finish-close-" });
+    const opened = await harness.handlers.openSession({ client: "codex", agent: "codex" });
+    const sessionId = String(data(opened).sessionId);
+    await harness.handlers.beginTask({ sessionId, title: "Completed task" });
+    expect(
+      (await harness.handlers.finishTask({ sessionId, summary: "Completed safely." })).status,
+    ).toBe("task_finished");
+    const checkpointReads = harness.inspector.checkpointReads.length;
+
+    const closed = await harness.handlers.closeSession({ sessionId });
+
+    expect(closed.status).toBe("session_closed");
+    expect(data(closed)).toMatchObject({ taskId: null, checkpointStatus: "not_requested" });
+    expect(harness.inspector.checkpointReads).toHaveLength(checkpointReads);
+  });
+
   it("runs the complete lifecycle through existing core operations", async () => {
     const harness = await createHarness();
     const initialStatus = await harness.handlers.getStatus({});

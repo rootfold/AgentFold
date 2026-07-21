@@ -19,6 +19,7 @@ import {
   beginTaskInputSchema,
   closeSessionInputSchema,
   createCheckpointInputSchema,
+  finishTaskInputSchema,
   getContextInputSchema,
   getResumePacketInputSchema,
   getStatusInputSchema,
@@ -30,7 +31,10 @@ export const agentFoldMcpInstructions = [
   "Call agentfold_open_session before repository work.",
   "Continue an active task only when its continuation packet matches the user's request.",
   "Call agentfold_begin_task only for clearly requested new work when no active task exists.",
-  "Report meaningful progress, then call agentfold_close_session before ending or switching agents.",
+  "Report meaningful progress during unfinished work.",
+  "Call agentfold_finish_task only when the requested scope is complete, blockers are resolved, and final validation is honestly reported.",
+  "Call agentfold_close_session with checkpointing when work is paused, incomplete, blocked, or handed off.",
+  "After finishing, begin a new task for the next substantive request in the same open session.",
   "Reports contain concise engineering conclusions, never private chain of thought, secrets, or conversations.",
   "Never discard uncommitted work, create commits, or push unless the user separately requests it.",
 ].join(" ");
@@ -193,6 +197,17 @@ export function createAgentFoldMcpServer(input: CreateAgentFoldMcpServerInput): 
       annotations: stateAnnotations,
     },
     (value) => invoke(handlers.createCheckpoint, value),
+  );
+  server.registerTool(
+    agentFoldMcpToolNames.finishTask,
+    {
+      title: "Finish AgentFold task",
+      description: "Create a final checkpoint, archive the completed task, and clear active state.",
+      inputSchema: finishTaskInputSchema,
+      outputSchema: mcpResultSchema,
+      annotations: stateAnnotations,
+    },
+    (value) => invoke(handlers.finishTask, value),
   );
   server.registerTool(
     agentFoldMcpToolNames.getResumePacket,

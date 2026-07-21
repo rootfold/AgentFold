@@ -9,6 +9,7 @@ import type {
   BeginTaskInput,
   CloseSessionInput,
   CreateCheckpointInput,
+  FinishTaskInput,
   GetContextInput,
   GetResumePacketInput,
   OpenSessionInput,
@@ -44,6 +45,7 @@ export interface AgentFoldServiceClient {
   beginTask(input: BeginTaskInput): Promise<AgentFoldMcpResult>;
   reportProgress(input: ReportProgressInput): Promise<AgentFoldMcpResult>;
   createCheckpoint(input: CreateCheckpointInput): Promise<AgentFoldMcpResult>;
+  finishTask(input: FinishTaskInput): Promise<AgentFoldMcpResult>;
   getResumePacket(input: GetResumePacketInput): Promise<AgentFoldMcpResult>;
 }
 
@@ -213,6 +215,9 @@ class NodeAgentFoldServiceClient implements AgentFoldServiceClient {
   }
   createCheckpoint(input: CreateCheckpointInput): Promise<AgentFoldMcpResult> {
     return this.request("integration.create_checkpoint", input);
+  }
+  finishTask(input: FinishTaskInput): Promise<AgentFoldMcpResult> {
+    return this.request("integration.finish_task", input);
   }
   getResumePacket(input: GetResumePacketInput): Promise<AgentFoldMcpResult> {
     return this.request("integration.get_resume_packet", input);

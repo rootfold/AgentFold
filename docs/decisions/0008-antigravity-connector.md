@@ -40,7 +40,7 @@ The MCP process resolves one repository from an explicit workspace, one valid cl
 
 ### Always-active workspace rule
 
-The connector owns `.agents/rules/agentfold-continuity.md`. A workspace rule is used because lifecycle guidance should be active for substantive work without requiring a user-triggered skill. It distinguishes coding work from lightweight questions, requires session open/report/close behavior, and forbids private reasoning, secrets, automatic commits, and pushes.
+The connector owns `.agents/rules/agentfold-continuity.md`. A workspace rule is used because lifecycle guidance should be active for substantive work without requiring a user-triggered skill. It distinguishes coding work from lightweight questions, directs complete work to finish and unfinished work to checkpoint-and-close, and forbids private reasoning, secrets, automatic commits, and pushes.
 
 The rule cannot guarantee model compliance. First-use approval, a disabled MCP server, or ignored instructions can prevent semantic reports. Heartbeat-timeout recovery remains the fallback and may be Git-only when no semantic report exists. AgentFold never scrapes conversations or infers private reasoning.
 

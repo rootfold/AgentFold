@@ -117,6 +117,19 @@ export class ServiceSessionRegistry {
     return updated;
   }
 
+  clearTask(sessionId: string): AgentFoldServiceSession | undefined {
+    const touched = this.touch(sessionId);
+    if (touched === undefined) return undefined;
+    const withoutTask = { ...touched };
+    delete withoutTask.activeTaskId;
+    const internal = this.sessions.get(sessionId);
+    this.sessions.set(sessionId, {
+      ...withoutTask,
+      leaseDurationSeconds: internal?.leaseDurationSeconds ?? 90,
+    });
+    return withoutTask;
+  }
+
   detach(sessionId: string): AgentFoldServiceSession | undefined {
     const current = this.sessions.get(sessionId);
     if (current === undefined || current.state !== "open") return undefined;
@@ -227,6 +240,12 @@ export class ServiceSessionRegistry {
         const session = this.sessions.get(sessionId);
         return session?.repositoryId === repositoryId
           ? asMcpSession(this.attachTask(sessionId, taskId) ?? session)
+          : undefined;
+      },
+      clearTask: (sessionId) => {
+        const session = this.sessions.get(sessionId);
+        return session?.repositoryId === repositoryId
+          ? asMcpSession(this.clearTask(sessionId) ?? session)
           : undefined;
       },
       touch: (sessionId) => {

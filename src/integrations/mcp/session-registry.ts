@@ -18,6 +18,7 @@ export interface AgentFoldMcpSessionRegistry {
   open(client: string, agent: string): AgentFoldMcpSession;
   requireOpen(sessionId: string): SessionLookupResult;
   attachTask(sessionId: string, taskId: string): AgentFoldMcpSession | undefined;
+  clearTask(sessionId: string): AgentFoldMcpSession | undefined;
   touch(sessionId: string): AgentFoldMcpSession | undefined;
   close(sessionId: string): AgentFoldMcpSession | undefined;
   get(sessionId: string): AgentFoldMcpSession | undefined;
@@ -65,6 +66,16 @@ export class InMemorySessionRegistry implements AgentFoldMcpSessionRegistry {
 
   attachTask(sessionId: string, taskId: string): AgentFoldMcpSession | undefined {
     return this.updateOpen(sessionId, { activeTaskId: taskId });
+  }
+
+  clearTask(sessionId: string): AgentFoldMcpSession | undefined {
+    const current = this.sessions.get(sessionId);
+    if (current === undefined || current.closedAt !== undefined) return undefined;
+    const withoutTask = { ...current };
+    delete withoutTask.activeTaskId;
+    const updated = { ...withoutTask, lastActivityAt: this.now().toISOString() };
+    this.sessions.set(sessionId, updated);
+    return updated;
   }
 
   touch(sessionId: string): AgentFoldMcpSession | undefined {

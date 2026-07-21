@@ -224,7 +224,7 @@ describe("built Codex connector workflow", () => {
       expect((await readdir(path.join(state, "backups"))).length).toBe(1);
 
       const codexClient = await connectMcp(entry.command, entry.args, repositoryRoot, env);
-      expect((await codexClient.listTools()).tools).toHaveLength(8);
+      expect((await codexClient.listTools()).tools).toHaveLength(9);
       const opened = await codexClient.callTool({
         name: agentFoldMcpToolNames.openSession,
         arguments: { client: "codex-cli", agent: "codex", target: "codex" },
@@ -260,7 +260,7 @@ describe("built Codex connector workflow", () => {
 
       const verified = await runCli(repositoryRoot, "verify", "codex");
       expect(verified.stdout).toContain("verification passed");
-      expect(verified.stdout).toContain("Tools: 8");
+      expect(verified.stdout).toContain("Tools: 9");
       const linkedPreview = await runCli(
         linkedRoot,
         "connect",

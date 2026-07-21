@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { loadLatestCompletedTask } from "../completion/load-completed-task.js";
 import { loadCanonicalContext } from "../context/load-context.js";
 import { isPathInside } from "../context/path-boundary.js";
 import type { Diagnostic } from "../diagnostics/diagnostic.js";
@@ -169,12 +170,25 @@ export async function prepareResume(
 
   const loadedState = await loadActiveState(dependencies.fileSystem, contextResult.repositoryRoot);
   if (loadedState.status === "missing") {
+    const completed = await loadLatestCompletedTask(
+      dependencies.fileSystem,
+      contextResult.repositoryRoot,
+    );
+    if (completed.status === "error") {
+      return terminal("filesystem-error", 1, completed.diagnostics);
+    }
     return terminal("missing-state", 6, [
       {
         code: "AFR002",
         severity: "error",
-        message: "No active task exists to resume.",
-        suggestion: "Run agentfold start, report progress, and create a checkpoint first.",
+        message:
+          completed.status === "success"
+            ? "The previous task is completed. Begin a new task for new implementation work."
+            : "No active task exists to resume.",
+        suggestion:
+          completed.status === "success"
+            ? "Run agentfold start for the next substantive task; completed tasks are not reopened."
+            : "Run agentfold start, report progress, and create a checkpoint first.",
       },
     ]);
   }

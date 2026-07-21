@@ -84,6 +84,10 @@ When an open or detached lease expires, the service marks it recovery-pending an
 
 Automatic checkpoints never infer semantic conclusions. Freshness remains `new`, `reused`, or `none` according to the persisted structured report revision. They do not mutate Git.
 
+## Finished tasks
+
+`agentfold_finish_task` runs through the same per-repository operation queue as reports and checkpoints. It creates a lifecycle-distinct final checkpoint and `.agentfold/state/completed/<task-id>.md`, then removes active state. The service clears the session's active task but keeps the session open, allowing the next substantive request to begin a fresh task. `agentfold_close_session` then closes without inventing another report or checkpoint. Incomplete, blocked, paused, or handed-off work should use the existing close-and-checkpoint path instead.
+
 Set `automation.enabled: false` to retain shared sessions and explicit lifecycle tools while disabling switch and timeout checkpoints. Explicit user-requested checkpoints ignore the automatic minimum interval.
 
 ## MCP modes
@@ -94,7 +98,7 @@ agentfold mcp --workspace . --service required
 agentfold mcp --workspace . --service disabled
 ```
 
-- `auto` is the default. It delegates all eight tools when a compatible service is ready; otherwise it warns on stderr and starts embedded mode.
+- `auto` is the default. It delegates all nine tools when a compatible service is ready; otherwise it warns on stderr and starts embedded mode.
 - `required` fails startup if the shared service is unavailable or incompatible. Future connectors should use this mode.
 - `disabled` always uses the existing in-process session registry and core handlers.
 

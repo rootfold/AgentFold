@@ -18,6 +18,7 @@ export const serviceMethodNames = [
   "integration.begin_task",
   "integration.report_progress",
   "integration.create_checkpoint",
+  "integration.finish_task",
   "integration.get_resume_packet",
 ] as const;
 

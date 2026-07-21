@@ -6,6 +6,7 @@ import {
   prepareCodexAgentsRemoval,
   renderCodexAgentsRegion,
   renderLegacyCodexAgentsRegion,
+  renderPreviousCodexAgentsRegion,
 } from "../../src/integrations/connectors/codex/codex-agents.js";
 import { createCodexMcpEntry } from "../../src/integrations/connectors/codex/codex-launch-entry.js";
 import {
@@ -117,7 +118,9 @@ describe("Codex managed configuration files", () => {
     expect(source).toContain("agentfold_open_session");
     expect(source).toContain("agentfold_begin_task");
     expect(source).toContain("agentfold_report_progress");
+    expect(source).toContain("agentfold_finish_task");
     expect(source).toContain("agentfold_close_session");
+    expect(source).toContain("schema=2");
     expect(source).toContain("private chain of thought");
     expect(source).toContain("Never commit, push, discard work");
   });
@@ -138,10 +141,14 @@ describe("Codex managed configuration files", () => {
       status: "ready",
       action: "update",
     });
+    expect(prepareCodexAgentsEdit(bytes(renderPreviousCodexAgentsRegion()))).toMatchObject({
+      status: "ready",
+      action: "update",
+    });
     const current = renderCodexAgentsRegion();
     const fingerprint = fingerprintCodexAgentsRegion(current);
     expect(fingerprint).toHaveLength(64);
-    expect(prepareCodexAgentsEdit(bytes(current.replace("substantial", "all")))).toMatchObject({
+    expect(prepareCodexAgentsEdit(bytes(current.replace("substantive", "all")))).toMatchObject({
       status: "collision",
     });
     expect(prepareCodexAgentsEdit(bytes(`${current}\n${current}`))).toMatchObject({

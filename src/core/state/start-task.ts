@@ -87,14 +87,24 @@ async function existingHistoryTaskIds(
   fileSystem: FileSystem,
   repositoryRoot: string,
 ): Promise<readonly string[]> {
-  const historyDirectory = path.join(repositoryRoot, ".agentfold", "state", "history");
-  if ((await fileSystem.entryType(historyDirectory)) !== "directory") {
-    return [];
+  const taskIds: string[] = [];
+  for (const leaf of ["history", "completed"] as const) {
+    const directory = path.join(repositoryRoot, ".agentfold", "state", leaf);
+    if ((await fileSystem.entryType(directory)) !== "directory") continue;
+    const [realRoot, realDirectory] = await Promise.all([
+      fileSystem.realPath(repositoryRoot),
+      fileSystem.realPath(directory),
+    ]);
+    if (!isPathInside(realRoot, realDirectory)) {
+      throw new Error(`The ${leaf} state directory resolves outside the Git repository.`);
+    }
+    taskIds.push(
+      ...(await fileSystem.listDirectory(realDirectory))
+        .map((entry) => entry.match(/AF-\d{8}-\d{3}/u)?.[0])
+        .filter((taskId): taskId is string => taskId !== undefined),
+    );
   }
-
-  return (await fileSystem.listDirectory(historyDirectory))
-    .map((entry) => entry.match(/AF-\d{8}-\d{3}/u)?.[0])
-    .filter((taskId): taskId is string => taskId !== undefined);
+  return [...new Set(taskIds)];
 }
 
 function repositoryWorkingContext(repositoryRoot: string, workingDirectory: string): string {

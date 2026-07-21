@@ -67,7 +67,7 @@ async function connectedServer(generateId: () => string = () => "server-session"
 }
 
 describe("AgentFold MCP server", () => {
-  it("advertises stable identity, instructions, eight tools, and no resources or prompts", async () => {
+  it("advertises stable identity, instructions, nine tools, and no resources or prompts", async () => {
     expect(packageJson.dependencies["@modelcontextprotocol/sdk"]).toBe("1.29.0");
     const { server, client } = await connectedServer();
     expect(client.getServerVersion()).toEqual({ name: "agentfold", version: "1.2.3-test" });

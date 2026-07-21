@@ -216,7 +216,7 @@ pnpm agentfold connect codex --dry-run
 # Connect the Codex CLI, IDE extension, and desktop app configuration
 pnpm agentfold connect codex --surface all --yes
 
-# Verify ownership, the local service, the MCP handshake, and all eight tools
+# Verify ownership, the local service, the MCP handshake, and all nine tools
 pnpm agentfold verify codex
 ```
 
@@ -241,7 +241,7 @@ Start focused work without manually copying project context:
 Use AgentFold for this task. Open a session, continue a relevant active task if
 one exists, and otherwise begin a task named "Add GitHub OAuth". Read the bounded
 project context, implement the change, validate it, report concise progress, and
-close the session with a checkpoint.
+finish the task when its scope is complete.
 ```
 
 Continue existing work in a later Codex session or another connected host:
@@ -260,8 +260,9 @@ The tool lifecycle behind those prompts is:
 4. `agentfold_get_context` reads bounded canonical project context.
 5. `agentfold_report_progress` stores structured engineering conclusions.
 6. `agentfold_create_checkpoint` captures bounded Git facts and semantic state.
-7. `agentfold_get_resume_packet` prepares a deterministic handoff when needed.
-8. `agentfold_close_session` can report, checkpoint, and close in one operation.
+7. `agentfold_finish_task` archives completed work and clears active state.
+8. `agentfold_get_resume_packet` prepares a deterministic handoff when needed.
+9. `agentfold_close_session` can report, checkpoint, and close unfinished work.
 
 Do not include secrets, private reasoning, full conversations, or terminal
 transcripts in task titles or progress reports. AgentFold never commits, pushes,
@@ -519,11 +520,13 @@ For the MVP, `handoff` may internally combine `checkpoint` and `resume`.
 
 ### `agentfold finish`
 
-Archive the active task.
+Preview or atomically archive a completed active task. Remaining in-progress work or blockers prevent completion; structured resolution entries must match exactly.
 
 ```bash
 agentfold finish
-agentfold finish --summary "OAuth flow completed and tested"
+agentfold finish --dry-run
+agentfold finish --agent codex --yes
+Get-Content completion.json -Raw | agentfold finish --stdin --yes
 ```
 
 ---
@@ -555,7 +558,8 @@ agentfold finish --summary "OAuth flow completed and tested"
 - **`.agentfold/context/conventions.md`** — coding rules, naming, testing, and contribution standards.
 - **`.agentfold/context/safety.md`** — sensitive paths, prohibited actions, generated files, and confirmation rules.
 - **`.agentfold/state/current.md`** — current task and latest checkpoint.
-- **`.agentfold/state/history/`** — archived task checkpoints and completion summaries.
+- **`.agentfold/state/history/`** — immutable progress and final checkpoints.
+- **`.agentfold/state/completed/`** — completed-task archives; completed tasks cannot yet be reopened or deleted.
 - **`.agentfold/manifest.json`** — hashes, adapter versions, schema version, and synchronization metadata.
 
 ---

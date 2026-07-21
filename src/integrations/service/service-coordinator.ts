@@ -18,6 +18,7 @@ import {
   beginTaskInputSchema,
   closeSessionInputSchema,
   createCheckpointInputSchema,
+  finishTaskInputSchema,
   getContextInputSchema,
   getResumePacketInputSchema,
   getStatusInputSchema,
@@ -223,6 +224,8 @@ export class AgentFoldServiceCoordinator {
         return this.sessionOperation(params, reportProgressInputSchema, "reportProgress", true);
       case "integration.create_checkpoint":
         return this.sessionOperation(params, createCheckpointInputSchema, "createCheckpoint", true);
+      case "integration.finish_task":
+        return this.sessionOperation(params, finishTaskInputSchema, "finishTask", true);
       case "integration.get_resume_packet":
         return this.sessionOperation(params, getResumePacketInputSchema, "getResumePacket", false);
     }
@@ -372,7 +375,8 @@ export class AgentFoldServiceCoordinator {
   private async sessionOperation<Schema extends z.ZodType>(
     params: unknown,
     schema: Schema,
-    operation: "beginTask" | "reportProgress" | "createCheckpoint" | "getResumePacket",
+    operation:
+      "beginTask" | "reportProgress" | "createCheckpoint" | "finishTask" | "getResumePacket",
     serialized: boolean,
   ): Promise<AgentFoldMcpResult> {
     const parsed = parseParams(schema, params) as z.output<Schema> & { readonly sessionId: string };

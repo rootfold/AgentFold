@@ -10,6 +10,7 @@ import {
   beginTaskInputSchema,
   closeSessionInputSchema,
   createCheckpointInputSchema,
+  finishTaskInputSchema,
   getContextInputSchema,
   getResumePacketInputSchema,
   getStatusInputSchema,
@@ -113,6 +114,10 @@ export function createMcpServiceBridge(
     createCheckpoint: (value) =>
       invoke(agentFoldMcpToolNames.createCheckpoint, createCheckpointInputSchema, value, (parsed) =>
         input.client.createCheckpoint(parsed),
+      ),
+    finishTask: (value) =>
+      invoke(agentFoldMcpToolNames.finishTask, finishTaskInputSchema, value, (parsed) =>
+        input.client.finishTask(parsed),
       ),
     getResumePacket: (value) =>
       invoke(agentFoldMcpToolNames.getResumePacket, getResumePacketInputSchema, value, (parsed) =>

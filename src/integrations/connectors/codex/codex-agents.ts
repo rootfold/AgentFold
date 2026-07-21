@@ -116,6 +116,22 @@ const instructionLines = [
   "- Before modifying files, call `agentfold_open_session` and continue a relevant active task.",
   "- Call `agentfold_begin_task` only when no relevant active task exists; do not create tasks for simple questions or read-only inspection.",
   "- After meaningful milestones, call `agentfold_report_progress` with concise engineering conclusions only.",
+  "- Call `agentfold_finish_task` when the requested scope is fully complete, blockers are resolved, and final validation is honestly reported.",
+  "- Call `agentfold_close_session` with checkpointing when work is paused, incomplete, blocked, uncertain, or handed off; do not finish merely because context or usage limits were reached.",
+  "- After finishing, keep the session open and call `agentfold_begin_task` for the next substantive unrelated request.",
+  "- Preserve uncommitted work and avoid repeated failed approaches identified by continuation packets.",
+  "- Treat reused or absent semantic context cautiously and verify assumptions against the repository.",
+  "- Never report private chain of thought, complete conversations, secrets, or environment values.",
+  "- Never commit, push, discard work, or replace an unrelated active task without the user's confirmation.",
+];
+
+const previousInstructionLines = [
+  "## AgentFold continuity for Codex",
+  "",
+  "- Use AgentFold for substantive repository-changing work.",
+  "- Before modifying files, call `agentfold_open_session` and continue a relevant active task.",
+  "- Call `agentfold_begin_task` only when no relevant active task exists; do not create tasks for simple questions or read-only inspection.",
+  "- After meaningful milestones, call `agentfold_report_progress` with concise engineering conclusions only.",
   "- Before ending substantial work, call `agentfold_close_session`, include a concise final report, and leave checkpoint creation enabled.",
   "- Preserve uncommitted work and avoid repeated failed approaches identified by continuation packets.",
   "- Treat reused or absent semantic context cautiously and verify assumptions against the repository.",
@@ -125,7 +141,7 @@ const instructionLines = [
 
 export function renderCodexAgentsRegion(
   lineEnding: "\n" | "\r\n" = "\n",
-  schemaVersion = 1,
+  schemaVersion = 2,
 ): string {
   return [`${startPrefix}${schemaVersion} -->`, ...instructionLines, endMarker].join(lineEnding);
 }
@@ -138,6 +154,10 @@ export function renderLegacyCodexAgentsRegion(lineEnding: "\n" | "\r\n" = "\n"):
     "Use AgentFold MCP lifecycle tools for substantial repository work.",
     endMarker,
   ].join(lineEnding);
+}
+
+export function renderPreviousCodexAgentsRegion(lineEnding: "\n" | "\r\n" = "\n"): string {
+  return [`${startPrefix}1 -->`, ...previousInstructionLines, endMarker].join(lineEnding);
 }
 
 export function fingerprintCodexAgentsRegion(region: string): string {
@@ -169,6 +189,9 @@ export function prepareCodexAgentsEdit(
   const legacyFingerprint = fingerprintCodexAgentsRegion(
     renderLegacyCodexAgentsRegion(document.lineEnding),
   );
+  const previousFingerprint = fingerprintCodexAgentsRegion(
+    renderPreviousCodexAgentsRegion(document.lineEnding),
+  );
   if (region === undefined) {
     return {
       status: "ready",
@@ -188,7 +211,8 @@ export function prepareCodexAgentsEdit(
   }
   if (
     !provenFingerprints.includes(currentFingerprint) &&
-    currentFingerprint !== legacyFingerprint
+    currentFingerprint !== legacyFingerprint &&
+    currentFingerprint !== previousFingerprint
   ) {
     return { status: "collision", reason: "The AgentFold-owned AGENTS.md region was modified." };
   }

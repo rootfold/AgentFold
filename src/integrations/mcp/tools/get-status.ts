@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { loadLatestCompletedTask } from "../../../core/completion/load-completed-task.js";
 import { loadCanonicalContext } from "../../../core/context/load-context.js";
 import { loadActiveState } from "../../../core/state/load-active-state.js";
 import type { AgentFoldMcpApplicationContext } from "../mcp-context.js";
@@ -33,6 +34,9 @@ export async function getStatus(
           contextValid: false,
           activeTask: null,
           latestCheckpointId: null,
+          latestCompletedTaskId: null,
+          latestCompletedFinalCheckpointId: null,
+          latestCompletedFinishedAt: null,
           semanticReportRevision: 0,
           stateVisibility: null,
           localStateIgnored: null,
@@ -46,6 +50,10 @@ export async function getStatus(
 
   const active = await loadActiveState(context.fileSystem, context.repositoryRoot);
   if (active.status === "error") return mcpFailure(operation, "invalid_state", active.diagnostics);
+  const completed = await loadLatestCompletedTask(context.fileSystem, context.repositoryRoot);
+  if (completed.status === "error") {
+    return mcpFailure(operation, "invalid_completed_state", completed.diagnostics);
+  }
   let localStateIgnored: boolean | null = null;
   if (canonical.context.state.visibility === "local") {
     try {
@@ -72,11 +80,13 @@ export async function getStatus(
         ? [
             agentFoldMcpToolNames.reportProgress,
             agentFoldMcpToolNames.createCheckpoint,
+            agentFoldMcpToolNames.finishTask,
             agentFoldMcpToolNames.closeSession,
           ]
         : [
             agentFoldMcpToolNames.reportProgress,
             agentFoldMcpToolNames.createCheckpoint,
+            agentFoldMcpToolNames.finishTask,
             agentFoldMcpToolNames.getResumePacket,
             agentFoldMcpToolNames.closeSession,
           ];
@@ -98,6 +108,10 @@ export async function getStatus(
       contextValid: true,
       activeTask: state === undefined ? null : { taskId: state.taskId, title: state.title },
       latestCheckpointId: state?.checkpointHistory.latestCheckpointId ?? null,
+      latestCompletedTaskId: completed.status === "success" ? completed.task.taskId : null,
+      latestCompletedFinalCheckpointId:
+        completed.status === "success" ? completed.task.finalCheckpointId : null,
+      latestCompletedFinishedAt: completed.status === "success" ? completed.task.finishedAt : null,
       semanticReportRevision: state?.reportRevision ?? 0,
       stateVisibility: canonical.context.state.visibility,
       localStateIgnored,

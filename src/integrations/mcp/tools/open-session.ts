@@ -1,4 +1,5 @@
 import { loadCanonicalContext } from "../../../core/context/load-context.js";
+import { loadLatestCompletedTask } from "../../../core/completion/load-completed-task.js";
 import { containsSecretLikeText } from "../../../core/reports/redact-secrets.js";
 import { prepareResume } from "../../../core/resume/prepare-resume.js";
 import { loadActiveState } from "../../../core/state/load-active-state.js";
@@ -54,15 +55,42 @@ export async function openSession(
     });
   }
   if (active.status === "missing") {
+    const completed = await loadLatestCompletedTask(context.fileSystem, context.repositoryRoot);
+    if (completed.status === "error") {
+      return mcpFailure(operation, "invalid_completed_state", [opened, ...completed.diagnostics], {
+        sessionId: session.sessionId,
+      });
+    }
     return mcpSuccess(
       operation,
       "no_active_task",
       {
         sessionId: session.sessionId,
         project: canonical.context.project,
+        previousCompletedTask:
+          completed.status === "success"
+            ? {
+                taskId: completed.task.taskId,
+                finalCheckpointId: completed.task.finalCheckpointId,
+                finishedAt: completed.task.finishedAt,
+              }
+            : null,
         nextOperation: agentFoldMcpToolNames.beginTask,
       },
-      [opened, ...canonical.diagnostics],
+      [
+        opened,
+        ...canonical.diagnostics,
+        ...(completed.status === "success"
+          ? [
+              {
+                code: "AFMCP020",
+                severity: "info" as const,
+                message:
+                  "The previous task is completed. Begin a new task for new implementation work.",
+              },
+            ]
+          : []),
+      ],
     );
   }
 

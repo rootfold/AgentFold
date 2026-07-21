@@ -66,7 +66,7 @@ describe("Codex connector CLI", () => {
           Promise.resolve({
             host: "codex" as const,
             valid: true,
-            toolsAvailable: 8,
+            toolsAvailable: 9,
             serviceAvailable: true,
             exitCode: 0 as const,
             diagnostics: [],
@@ -105,7 +105,7 @@ describe("Codex connector CLI", () => {
         output: verified.output,
       }),
     ).toBe(0);
-    expect(verified.stdout()).toContain("Tools: 8");
+    expect(verified.stdout()).toContain("Tools: 9");
 
     const previewDisconnect = captureOutput();
     expect(

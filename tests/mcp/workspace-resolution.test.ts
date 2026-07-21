@@ -192,7 +192,7 @@ describe("MCP dynamic workspace resolution", () => {
     expect(await resolver.inspectRootsAfterLock()).toMatchObject({ code: "AFMCP021" });
   });
 
-  it("serves the existing eight tools after lazy roots selection without exposing the root", async () => {
+  it("serves all nine tools after lazy roots selection without exposing the root", async () => {
     const fixture = await createContinuityFixture(temporaryDirectories, {
       name: "agentfold lazy MCP roots ",
     });
@@ -216,7 +216,7 @@ describe("MCP dynamic workspace resolution", () => {
     });
     await client.connect(clientTransport);
     const tools = await client.listTools();
-    expect(tools.tools).toHaveLength(8);
+    expect(tools.tools).toHaveLength(9);
     const status = await client.callTool({ name: agentFoldMcpToolNames.getStatus, arguments: {} });
     expect(status.isError).not.toBe(true);
     expect(JSON.stringify(status)).not.toContain(fixture.root);

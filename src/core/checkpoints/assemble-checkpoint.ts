@@ -12,6 +12,7 @@ export interface AssembleCheckpointInput {
   readonly checkpointId: string;
   readonly createdAt: string;
   readonly checkpointAgent?: string;
+  readonly kind?: "progress" | "final";
 }
 
 export function assembleCheckpoint(input: AssembleCheckpointInput): Checkpoint {
@@ -26,6 +27,7 @@ export function assembleCheckpoint(input: AssembleCheckpointInput): Checkpoint {
       : state.reportRevision > state.checkpointHistory.latestSemanticRevision
         ? "new"
         : "reused";
+  const kind = input.kind ?? "progress";
   const observedGit = {
     startingBranch: state.startingBranch,
     currentBranch: input.gitFacts.branch,
@@ -43,6 +45,8 @@ export function assembleCheckpoint(input: AssembleCheckpointInput): Checkpoint {
     untrackedFilesExcludedFromLineStatistics: true as const,
   };
   const fingerprint = createCheckpointFingerprint({
+    kind,
+    ...(kind === "final" ? { taskStatus: "completed" as const } : {}),
     taskId: state.taskId,
     currentBranch: input.gitFacts.branch,
     currentCommit: input.gitFacts.commit,
@@ -60,6 +64,8 @@ export function assembleCheckpoint(input: AssembleCheckpointInput): Checkpoint {
 
   return checkpointSchema.parse({
     schemaVersion: 1,
+    kind,
+    ...(kind === "final" ? { taskStatus: "completed" } : {}),
     checkpointId: input.checkpointId,
     taskId: state.taskId,
     taskTitle: state.title,

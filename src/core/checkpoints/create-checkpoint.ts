@@ -114,7 +114,7 @@ function terminal(
   };
 }
 
-async function historyFileNames(
+export async function listCheckpointHistoryFileNames(
   fileSystem: FileSystem,
   repositoryRoot: string,
 ): Promise<readonly string[]> {
@@ -264,7 +264,7 @@ export async function prepareCheckpoint(
 
   try {
     const [historyEntries, gitObservation] = await Promise.all([
-      historyFileNames(dependencies.fileSystem, repositoryRoot),
+      listCheckpointHistoryFileNames(dependencies.fileSystem, repositoryRoot),
       dependencies.gitInspector.readCheckpointFacts(repositoryRoot, {
         startingCommit: loadedState.state.startingCommit,
         startedAt: loadedState.state.startedAt,

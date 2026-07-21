@@ -13,7 +13,9 @@ import {
 import {
   antigravityContinuityRule,
   antigravityRuleOwnershipMarker,
+  fingerprintAntigravityRule,
   prepareAntigravityRule,
+  previousAntigravityRuleOwnershipMarker,
 } from "../../src/integrations/connectors/antigravity/antigravity-rule.js";
 
 const encoder = new TextEncoder();
@@ -154,6 +156,7 @@ describe("Antigravity continuity rule", () => {
     expect(antigravityContinuityRule).toContain(antigravityRuleOwnershipMarker);
     expect(antigravityContinuityRule).toContain("agentfold_open_session");
     expect(antigravityContinuityRule).toContain("agentfold_report_progress");
+    expect(antigravityContinuityRule).toContain("agentfold_finish_task");
     expect(antigravityContinuityRule).toContain("agentfold_close_session");
     expect(antigravityContinuityRule).toContain("conceptual questions");
     expect(antigravityContinuityRule).toContain("private chain of thought");
@@ -162,6 +165,10 @@ describe("Antigravity continuity rule", () => {
     expect(prepareAntigravityRule(undefined)).toMatchObject({ action: "create" });
     expect(prepareAntigravityRule(antigravityContinuityRule)).toMatchObject({
       action: "identical",
+    });
+    const previous = `${previousAntigravityRuleOwnershipMarker}\n# Previous owned rule\n`;
+    expect(prepareAntigravityRule(previous, [fingerprintAntigravityRule(previous)])).toMatchObject({
+      action: "update",
     });
   });
 

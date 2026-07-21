@@ -61,6 +61,8 @@ export function createLazyMcpOperations(input: CreateLazyMcpOperationsInput): La
         value,
         (operations) => operations.createCheckpoint,
       ),
+    finishTask: (value) =>
+      invoke(agentFoldMcpToolNames.finishTask, value, (operations) => operations.finishTask),
     getResumePacket: (value) =>
       invoke(
         agentFoldMcpToolNames.getResumePacket,

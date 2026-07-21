@@ -5,6 +5,7 @@ export const agentFoldMcpToolNames = {
   beginTask: "agentfold_begin_task",
   reportProgress: "agentfold_report_progress",
   createCheckpoint: "agentfold_create_checkpoint",
+  finishTask: "agentfold_finish_task",
   getResumePacket: "agentfold_get_resume_packet",
   closeSession: "agentfold_close_session",
 } as const;

@@ -124,6 +124,8 @@ export function serializeCheckpoint(input: Checkpoint): string {
   const reported = checkpoint.reportedState;
   const frontMatter = {
     schema: checkpoint.schemaVersion,
+    kind: checkpoint.kind,
+    ...(checkpoint.taskStatus === undefined ? {} : { task_status: checkpoint.taskStatus }),
     checkpoint_id: checkpoint.checkpointId,
     task_id: checkpoint.taskId,
     task_title: checkpoint.taskTitle,

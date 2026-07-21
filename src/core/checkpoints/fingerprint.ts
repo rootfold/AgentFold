@@ -8,6 +8,8 @@ import type {
 import { comparePortablePaths, normalizeGitPath } from "../git/git-path.js";
 
 export interface CheckpointFingerprintInput {
+  readonly kind?: "progress" | "final";
+  readonly taskStatus?: "completed";
   readonly taskId: string;
   readonly currentBranch: string;
   readonly currentCommit: string | null;
@@ -38,6 +40,9 @@ function moves(values: readonly { readonly from: string; readonly to: string }[]
 
 export function createCheckpointFingerprint(input: CheckpointFingerprintInput): string {
   const meaningful = {
+    ...(input.kind === "final"
+      ? { lifecycle: { kind: input.kind, taskStatus: input.taskStatus } }
+      : {}),
     taskId: input.taskId,
     currentBranch: input.currentBranch,
     currentCommit: input.currentCommit,

@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 
 export const antigravityRuleRelativePath = ".agents/rules/agentfold-continuity.md" as const;
-export const antigravityRuleOwnershipMarker = "<!-- agentfold:connector=antigravity schema=1 -->";
+export const antigravityRuleOwnershipMarker = "<!-- agentfold:connector=antigravity schema=2 -->";
+export const previousAntigravityRuleOwnershipMarker =
+  "<!-- agentfold:connector=antigravity schema=1 -->";
 
 export const antigravityContinuityRule = `${antigravityRuleOwnershipMarker}
 # AgentFold continuity
@@ -22,11 +24,18 @@ During substantial work:
 2. Record concise engineering conclusions: completed and current work, decisions, failed attempts, blockers, validation, next actions, and assumptions.
 3. Never report private chain of thought, full conversations, source-file contents, environment values, tokens, passwords, or secrets.
 
-Before ending the session or returning control after substantial changes:
+When the requested scope is fully complete:
 
-1. Call \`agentfold_close_session\` with a final structured report and leave checkpoint creation enabled.
-2. Do not claim continuity was recorded when an AgentFold tool failed.
-3. Never discard uncommitted work, create commits, or push unless the user separately requested it.
+1. Call \`agentfold_finish_task\` only after in-progress work and blockers are resolved and required validation is honestly reported.
+2. Keep the same session open; call \`agentfold_begin_task\` for the next substantive unrelated request.
+3. If the user explicitly says the task is complete, finish it after recording an honest final report.
+
+Before ending work that is paused, incomplete, blocked, uncertain, or being handed off:
+
+1. Call \`agentfold_close_session\` with a final structured progress report and leave checkpoint creation enabled.
+2. Do not finish merely because context or usage limits were reached, validation still fails, or the user requested only a checkpoint or handoff.
+3. Do not claim continuity was recorded when an AgentFold tool failed.
+4. Never discard uncommitted work, create commits, or push unless the user separately requested it.
 
 When AgentFold returns a continuation packet, follow its next actions, preserve recorded decisions, avoid repeated failed approaches, and verify absent or stale semantic context before broad changes.
 `;
@@ -61,7 +70,8 @@ export function prepareAntigravityRule(
     return { status: "ready", action: "identical", content: existing, fingerprint };
   }
   if (
-    existing.includes(antigravityRuleOwnershipMarker) &&
+    (existing.includes(antigravityRuleOwnershipMarker) ||
+      existing.includes(previousAntigravityRuleOwnershipMarker)) &&
     provenOwnedFingerprints.includes(existingFingerprint)
   ) {
     return { status: "ready", action: "update", content: antigravityContinuityRule, fingerprint };

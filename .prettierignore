@@ -5,3 +5,5 @@ node_modules
 pnpm-lock.yaml
 README.md
 .agentfold/
+AGENTS.md
+.agents/rules/agentfold-continuity.md

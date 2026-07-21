@@ -48,7 +48,7 @@ URIs, real paths, Git roots, initialization, and duplicates are validated. Sever
 
 ## Workspace lifecycle rule
 
-The connector owns only `.agents/rules/agentfold-continuity.md`. The deterministic rule tells Antigravity to open a session before substantive changes, continue a relevant active task, begin work only when appropriate, report meaningful milestones, and close with a final report and checkpoint.
+The connector owns only `.agents/rules/agentfold-continuity.md`. The deterministic rule tells Antigravity to open a session before substantive changes, continue a relevant active task, begin work only when appropriate, and report meaningful milestones. It uses `agentfold_finish_task` for fully completed and validated scope, while paused, incomplete, blocked, uncertain, or handed-off work uses `agentfold_close_session` with checkpointing.
 
 It distinguishes implementation, modifying debugging, refactoring, tests, documentation, and architecture from conceptual questions, explanations, read-only inspection, status requests, non-project chat, and trivial formatting help. It prohibits hidden reasoning, conversation capture, source contents, environment values, secrets, automatic commits, pushes, and discarding uncommitted work.
 
@@ -64,7 +64,7 @@ Before modifying an existing config, AgentFold stores an exact-byte backup in re
 agentfold verify antigravity
 ```
 
-Verification checks ownership, configuration and rule fingerprints, the executable descriptor, service auto-start, official MCP initialization, roots resolution, and all eight tools. It does not modify host or project configuration.
+Verification checks ownership, configuration and rule fingerprints, the executable descriptor, service auto-start, official MCP initialization, roots resolution, and all nine tools. It does not modify host or project configuration.
 
 There is no documented non-interactive API proving UI ingestion. After installation:
 
