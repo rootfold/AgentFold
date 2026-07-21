@@ -203,6 +203,17 @@ The currently implemented workflow is documented in
 [Google Antigravity connector](docs/integrations/antigravity.md), and
 [Codex connector](docs/integrations/codex.md).
 
+Install the public CLI globally, or use the scoped package directly through
+`npx`:
+
+```bash
+npm install --global @rootfold/agentfold
+agentfold --version
+
+# One-off execution without a global install
+npx --yes @rootfold/agentfold --version
+```
+
 ### Connect AgentFold to Codex
 
 Run the connector from an initialized repository. Preview is read-only; `--yes`

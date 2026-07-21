@@ -125,7 +125,7 @@ describe("AgentFold launch descriptors", () => {
     await mkdir(path.join(root, "dist"));
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ name: "agentfold", bin: { agentfold: "./dist/cli.js" } }),
+      JSON.stringify({ name: "@rootfold/agentfold", bin: { agentfold: "./dist/cli.js" } }),
       "utf8",
     );
     await writeFile(path.join(root, "dist", "cli.js"), "#!/usr/bin/env node\n", "utf8");
@@ -150,6 +150,36 @@ describe("AgentFold launch descriptors", () => {
     expect(descriptor.fingerprint).toBe(fingerprintLaunchDescriptor(descriptor));
   });
 
+  it("resolves the official scoped package from a global-style installation path", async () => {
+    const prefix = await mkdtemp(path.join(os.tmpdir(), "agentfold global prefix Å "));
+    temporaryDirectories.push(prefix);
+    const packageRoot = path.join(prefix, "lib", "node_modules", "@rootfold", "agentfold");
+    const cliEntry = path.join(packageRoot, "dist", "cli.js");
+    await mkdir(path.dirname(cliEntry), { recursive: true });
+    await writeFile(
+      path.join(packageRoot, "package.json"),
+      JSON.stringify({
+        name: "@rootfold/agentfold",
+        bin: { agentfold: "./dist/cli.js" },
+      }),
+      "utf8",
+    );
+    await writeFile(cliEntry, "#!/usr/bin/env node\n", "utf8");
+
+    const descriptor = await resolveAgentFoldLaunchDescriptor({
+      fileSystem: new NodeFileSystem(() => prefix),
+      processRunner: {
+        run: () => Promise.resolve({ exitCode: 0, stdout: "0.1.1", stderr: "" }),
+      },
+      executable: process.execPath,
+      modulePath: path.join(packageRoot, "dist", "module.js"),
+      allowTemporaryPath: true,
+    });
+
+    expect(descriptor.command).toBe(path.resolve(process.execPath));
+    expect(descriptor.argsPrefix).toEqual([cliEntry]);
+  });
+
   it("rejects missing package, executable, and CLI entries", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "agentfold descriptor missing "));
     temporaryDirectories.push(root);
@@ -167,7 +197,7 @@ describe("AgentFold launch descriptors", () => {
 
     await writeFile(
       path.join(root, "package.json"),
-      JSON.stringify({ name: "agentfold", bin: "./dist/cli.js" }),
+      JSON.stringify({ name: "@rootfold/agentfold", bin: "./dist/cli.js" }),
       "utf8",
     );
     await expect(
@@ -190,5 +220,29 @@ describe("AgentFold launch descriptors", () => {
         allowTemporaryPath: true,
       }),
     ).rejects.toThrow(/shims/u);
+  });
+
+  it("rejects an unscoped package that uses the AgentFold binary name", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "agentfold untrusted package "));
+    temporaryDirectories.push(root);
+    await mkdir(path.join(root, "dist"));
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({ name: "agentfold", bin: { agentfold: "./dist/cli.js" } }),
+      "utf8",
+    );
+    await writeFile(path.join(root, "dist", "cli.js"), "#!/usr/bin/env node\n", "utf8");
+
+    await expect(
+      resolveAgentFoldLaunchDescriptor({
+        fileSystem: new NodeFileSystem(() => root),
+        processRunner: {
+          run: () => Promise.resolve({ exitCode: 0, stdout: "0.1.1", stderr: "" }),
+        },
+        executable: process.execPath,
+        modulePath: path.join(root, "dist", "module.js"),
+        allowTemporaryPath: true,
+      }),
+    ).rejects.toThrow(/package boundary/u);
   });
 });

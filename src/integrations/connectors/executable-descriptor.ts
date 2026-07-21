@@ -11,7 +11,7 @@ import type { LaunchDescriptor } from "./connector-types.js";
 
 const packageDescriptorSchema = z
   .object({
-    name: z.literal("agentfold"),
+    name: z.literal("@rootfold/agentfold"),
     bin: z.union([z.string().min(1), z.object({ agentfold: z.string().min(1) }).passthrough()]),
   })
   .passthrough();
