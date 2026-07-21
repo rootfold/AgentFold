@@ -139,7 +139,8 @@ export async function prepareServiceRuntimeDirectory(
   );
   if (
     hasUnsafeSymbolicLink === true ||
-    !samePlatformPath(location.directory, realDirectory, platform.platform)
+    (hasUnsafeSymbolicLink === undefined &&
+      !samePlatformPath(location.directory, realDirectory, platform.platform))
   ) {
     throw new Error("The AgentFold runtime directory resolves through a symbolic link.");
   }

@@ -45,6 +45,20 @@ class DarwinAliasFileSystem extends NodeFileSystem {
   }
 }
 
+class WindowsShortNameFileSystem extends NodeFileSystem {
+  override ensureDirectory(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  override isSymbolicLink(): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  override realPath(candidate: string): Promise<string> {
+    return Promise.resolve(candidate.replace("RUNNER~1", "runneradmin"));
+  }
+}
+
 afterEach(async () => {
   await Promise.all(
     temporaryDirectories
@@ -126,6 +140,22 @@ describe("service runtime and automation policy", () => {
         restrictDirectory: () => Promise.resolve(),
       }),
     ).rejects.toThrow(/symbolic link/u);
+  });
+
+  it("accepts Windows short-name expansion when every component is not a symlink", async () => {
+    const runtime = await prepareServiceRuntimeDirectory({
+      fileSystem: new WindowsShortNameFileSystem(),
+      runtimeDirectory: "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\agentfold runtime",
+      platform: {
+        platform: "win32",
+        environment: {},
+        homeDirectory: "C:\\Users\\runneradmin",
+      },
+      restrictDirectory: () => Promise.resolve(),
+    });
+    expect(runtime.realDirectory).toBe(
+      "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\agentfold runtime",
+    );
   });
 
   it("generates a 256-bit capability token and compares it safely", () => {
