@@ -203,6 +203,70 @@ The currently implemented workflow is documented in
 [Google Antigravity connector](docs/integrations/antigravity.md), and
 [Codex connector](docs/integrations/codex.md).
 
+### Connect AgentFold to Codex
+
+Run the connector from an initialized repository. Preview is read-only; `--yes`
+is required to install the shared MCP registration and the repository-scoped
+Codex continuity instructions.
+
+```bash
+# Preview the exact changes
+pnpm agentfold connect codex --dry-run
+
+# Connect the Codex CLI, IDE extension, and desktop app configuration
+pnpm agentfold connect codex --surface all --yes
+
+# Verify ownership, the local service, the MCP handshake, and all eight tools
+pnpm agentfold verify codex
+```
+
+When using an installed AgentFold package, replace `pnpm agentfold` with
+`agentfold`. After installation or an update, restart Codex or its IDE extension,
+then confirm that `agentfold` is enabled under MCP servers. In the Codex CLI/TUI,
+use `/mcp` to inspect the connection.
+
+### Use AgentFold from Codex
+
+The connector adds a managed `AGENTS.md` region that asks Codex to use the MCP
+lifecycle for substantive repository work. You can verify the connection with a
+normal prompt:
+
+```text
+Verify that the AgentFold MCP server is connected and call agentfold_get_status.
+```
+
+Start focused work without manually copying project context:
+
+```text
+Use AgentFold for this task. Open a session, continue a relevant active task if
+one exists, and otherwise begin a task named "Add GitHub OAuth". Read the bounded
+project context, implement the change, validate it, report concise progress, and
+close the session with a checkpoint.
+```
+
+Continue existing work in a later Codex session or another connected host:
+
+```text
+Open an AgentFold session and continue the active task from its latest
+checkpoint. Verify repository facts before editing, then report new conclusions
+and close the session with checkpoint creation enabled.
+```
+
+The tool lifecycle behind those prompts is:
+
+1. `agentfold_get_status` checks initialization and active-task state.
+2. `agentfold_open_session` returns the current task or continuation status.
+3. `agentfold_begin_task` creates state only when no relevant task exists.
+4. `agentfold_get_context` reads bounded canonical project context.
+5. `agentfold_report_progress` stores structured engineering conclusions.
+6. `agentfold_create_checkpoint` captures bounded Git facts and semantic state.
+7. `agentfold_get_resume_packet` prepares a deterministic handoff when needed.
+8. `agentfold_close_session` can report, checkpoint, and close in one operation.
+
+Do not include secrets, private reasoning, full conversations, or terminal
+transcripts in task titles or progress reports. AgentFold never commits, pushes,
+resets, stashes, or changes branches through these MCP tools.
+
 ### Initialize AgentFold
 
 ```bash
