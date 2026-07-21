@@ -18,6 +18,9 @@ AgentFold gives the repository a shared, tool-independent memory layer.
 Stable project knowledge ──> generated instructions for each agent
 Current work state       ──> compact checkpoints and handoff packets
 ```
+```bash
+npm install --global @rootfold/agentfold
+```
 
 ```bash
 npx @rootfold/agentfold init
