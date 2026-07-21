@@ -2,20 +2,25 @@ import path from "node:path";
 
 import { isPathInside } from "../../core/context/path-boundary.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
+import { isKnownPlatformPathAlias } from "../../core/filesystem/platform-path-aliases.js";
 
 export async function validateConnectorHostPath(
   fileSystem: FileSystem,
   candidatePath: string,
+  platform: NodeJS.Platform = process.platform,
 ): Promise<void> {
   if (fileSystem.isSymbolicLink === undefined) {
     throw new Error("Symbolic-link inspection is unavailable for the connector target.");
   }
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
   let inspected = candidatePath;
   while (true) {
     if ((await fileSystem.exists(inspected)) && (await fileSystem.isSymbolicLink(inspected))) {
-      throw new Error("A connector target resolves through a symbolic link.");
+      if (!(await isKnownPlatformPathAlias(fileSystem, inspected, platform))) {
+        throw new Error("A connector target resolves through a symbolic link.");
+      }
     }
-    const parent = path.dirname(inspected);
+    const parent = platformPath.dirname(inspected);
     if (parent === inspected) return;
     inspected = parent;
   }

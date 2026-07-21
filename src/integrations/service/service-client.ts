@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import net from "node:net";
-import path from "node:path";
 
 import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
+import { samePlatformPath } from "../../core/filesystem/platform-path-aliases.js";
 import type { AgentFoldMcpResult } from "../mcp/mcp-response.js";
 import type {
   BeginTaskInput,
@@ -242,11 +242,7 @@ export async function connectAgentFoldServiceClient(
       };
     }
     const realDirectory = await input.fileSystem.realPath(location.directory);
-    const normalizeRuntimePath = (value: string): string => {
-      const resolved = path.resolve(value).replace(/[\\/]+$/u, "");
-      return platform.platform === "win32" ? resolved.toLocaleLowerCase("en-US") : resolved;
-    };
-    if (normalizeRuntimePath(realDirectory) !== normalizeRuntimePath(location.directory)) {
+    if (!samePlatformPath(realDirectory, location.directory, platform.platform)) {
       return {
         status: "incompatible",
         diagnostics: [

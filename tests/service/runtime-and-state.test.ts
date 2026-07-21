@@ -29,6 +29,22 @@ import { ServiceSessionRegistry } from "../../src/integrations/service/session-r
 
 const temporaryDirectories: string[] = [];
 
+class DarwinAliasFileSystem extends NodeFileSystem {
+  override ensureDirectory(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  override isSymbolicLink(candidate: string): Promise<boolean> {
+    return Promise.resolve(candidate === "/var" || candidate === "/var/folders/escaped");
+  }
+
+  override realPath(candidate: string): Promise<string> {
+    if (candidate === "/var") return Promise.resolve("/private/var");
+    if (candidate.startsWith("/var/folders/escaped")) return Promise.resolve("/outside/runtime");
+    return Promise.resolve(candidate.replace(/^\/var(?=\/|$)/u, "/private/var"));
+  }
+}
+
 afterEach(async () => {
   await Promise.all(
     temporaryDirectories
@@ -90,6 +106,26 @@ describe("service runtime and automation policy", () => {
       restrictDirectory: () => Promise.resolve(),
     });
     expect(runtime.realDirectory).toBe(await new NodeFileSystem().realPath(requested));
+  });
+
+  it("accepts fixed macOS aliases without accepting nested runtime symlinks", async () => {
+    const fileSystem = new DarwinAliasFileSystem();
+    await expect(
+      prepareServiceRuntimeDirectory({
+        fileSystem,
+        runtimeDirectory: "/var/folders/agentfold runtime",
+        platform: { platform: "darwin", environment: {}, homeDirectory: "/Users/dev" },
+        restrictDirectory: () => Promise.resolve(),
+      }),
+    ).resolves.toMatchObject({ realDirectory: "/private/var/folders/agentfold runtime" });
+    await expect(
+      prepareServiceRuntimeDirectory({
+        fileSystem,
+        runtimeDirectory: "/var/folders/escaped/runtime",
+        platform: { platform: "darwin", environment: {}, homeDirectory: "/Users/dev" },
+        restrictDirectory: () => Promise.resolve(),
+      }),
+    ).rejects.toThrow(/symbolic link/u);
   });
 
   it("generates a 256-bit capability token and compares it safely", () => {

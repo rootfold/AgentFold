@@ -45,7 +45,7 @@ Starting an already-running compatible service and stopping an already-stopped s
 - Linux prefers `$XDG_RUNTIME_DIR/agentfold`; otherwise it uses `$XDG_STATE_HOME/agentfold` or `~/.local/state/agentfold`.
 - `AGENTFOLD_RUNTIME_DIR` provides an advanced/test override.
 
-Runtime directories may not resolve through an unsafe symbolic link. Directories use mode `0700`, and metadata and Unix sockets use `0600`, where supported. No runtime file is placed in a project repository.
+Runtime directories may not resolve through an unsafe symbolic link. Fixed macOS system aliases such as `/var` to `/private/var` are canonicalized, while symlinks beneath them remain unsafe. Directories use mode `0700`, and metadata and Unix sockets use `0600`, where supported. No runtime file is placed in a project repository.
 
 The private IPC protocol uses one validated JSON request and one response per connection. Messages are limited to 1 MiB, read and operation timeouts are bounded, and malformed JSON, unknown methods, invalid parameters, oversized messages, authentication failures, and protocol mismatches receive safe errors without stack traces. The service never opens localhost or any other TCP port.
 

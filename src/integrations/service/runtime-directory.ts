@@ -3,6 +3,10 @@ import os from "node:os";
 
 import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
+import {
+  isKnownPlatformPathAlias,
+  samePlatformPath,
+} from "../../core/filesystem/platform-path-aliases.js";
 import type { GitRepositoryLocator } from "../../core/git/git-repository-locator.js";
 import type { ServiceEndpointKind } from "./service-types.js";
 
@@ -91,16 +95,7 @@ export function resolveServiceRuntimeLocation(
   };
 }
 
-function samePath(left: string, right: string, platform: NodeJS.Platform): boolean {
-  const platformPath = platform === "win32" ? path.win32 : path.posix;
-  const normalize = (value: string): string => {
-    const normalized = platformPath.resolve(value).replace(/[\\/]+$/u, "");
-    return platform === "win32" ? normalized.toLocaleLowerCase("en-US") : normalized;
-  };
-  return normalize(left) === normalize(right);
-}
-
-async function hasSymbolicLinkComponent(
+async function hasUnsafeSymbolicLinkComponent(
   fileSystem: FileSystem,
   directory: string,
   platform: NodeJS.Platform,
@@ -113,7 +108,12 @@ async function hasSymbolicLinkComponent(
   const relative = resolved.slice(parsed.root.length);
   for (const component of relative.split(/[\\/]+/u).filter((item) => item.length > 0)) {
     current = platformPath.join(current, component);
-    if (await fileSystem.isSymbolicLink(current)) return true;
+    if (
+      (await fileSystem.isSymbolicLink(current)) &&
+      !(await isKnownPlatformPathAlias(fileSystem, current, platform))
+    ) {
+      return true;
+    }
   }
   return false;
 }
@@ -132,15 +132,14 @@ export async function prepareServiceRuntimeDirectory(
   const location = resolveServiceRuntimeLocation(platform, input.runtimeDirectory);
   await input.fileSystem.ensureDirectory(location.directory);
   const realDirectory = await input.fileSystem.realPath(location.directory);
-  const hasSymbolicLink = await hasSymbolicLinkComponent(
+  const hasUnsafeSymbolicLink = await hasUnsafeSymbolicLinkComponent(
     input.fileSystem,
     location.directory,
     platform.platform,
   );
   if (
-    hasSymbolicLink === true ||
-    (hasSymbolicLink === undefined &&
-      !samePath(location.directory, realDirectory, platform.platform))
+    hasUnsafeSymbolicLink === true ||
+    !samePlatformPath(location.directory, realDirectory, platform.platform)
   ) {
     throw new Error("The AgentFold runtime directory resolves through a symbolic link.");
   }
