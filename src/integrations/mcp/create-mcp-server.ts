@@ -36,7 +36,10 @@ export const agentFoldMcpInstructions = [
 ].join(" ");
 
 export interface CreateAgentFoldMcpServerInput {
-  readonly context: AgentFoldMcpApplicationContext;
+  readonly context?: AgentFoldMcpApplicationContext;
+  readonly version?: string;
+  readonly logger?: AgentFoldMcpApplicationContext["logger"];
+  readonly repositoryRoot?: () => string | undefined;
   readonly handlers?: ReturnType<typeof createMcpToolHandlers>;
 }
 
@@ -56,15 +59,21 @@ function sanitizeValue(value: unknown, repositoryRoot: string): unknown {
 }
 
 function safeResult(
-  context: AgentFoldMcpApplicationContext,
+  repositoryRoot: string | undefined,
   result: AgentFoldMcpResult,
 ): AgentFoldMcpResult {
   const sanitized: AgentFoldMcpResult = {
     ...result,
     ...(result.data === undefined
       ? {}
-      : { data: sanitizeValue(result.data, context.repositoryRoot) }),
-    diagnostics: sanitizeMcpDiagnostics(result.diagnostics, context.repositoryRoot),
+      : {
+          data:
+            repositoryRoot === undefined ? result.data : sanitizeValue(result.data, repositoryRoot),
+        }),
+    diagnostics:
+      repositoryRoot === undefined
+        ? result.diagnostics
+        : sanitizeMcpDiagnostics(result.diagnostics, repositoryRoot),
   };
   if (containsSecretLikeText(JSON.stringify(sanitized))) {
     return mcpFailure(result.operation, "unsafe_output", [
@@ -79,10 +88,18 @@ function safeResult(
 }
 
 export function createAgentFoldMcpServer(input: CreateAgentFoldMcpServerInput): McpServer {
-  const { context } = input;
-  const handlers = input.handlers ?? createMcpToolHandlers(context);
+  const context = input.context;
+  const version = context?.version ?? input.version;
+  const logger = context?.logger ?? input.logger;
+  if (version === undefined || logger === undefined) {
+    throw new Error("MCP server version and logger are required.");
+  }
+  const handlers =
+    input.handlers ?? (context === undefined ? undefined : createMcpToolHandlers(context));
+  if (handlers === undefined) throw new Error("MCP tool handlers are required.");
+  const repositoryRoot = input.repositoryRoot ?? (() => context?.repositoryRoot);
   const server = new McpServer(
-    { name: "agentfold", version: context.version },
+    { name: "agentfold", version },
     { instructions: agentFoldMcpInstructions },
   );
   const invoke = async (
@@ -90,9 +107,9 @@ export function createAgentFoldMcpServer(input: CreateAgentFoldMcpServerInput): 
     value: unknown,
   ) => {
     try {
-      return toCallToolResult(safeResult(context, await handler(value)));
+      return toCallToolResult(safeResult(repositoryRoot(), await handler(value)));
     } catch (error: unknown) {
-      context.logger.debug(`Tool failure: ${safeDebugMessage(error, context.repositoryRoot)}`);
+      logger.debug(`Tool failure: ${safeDebugMessage(error, repositoryRoot())}`);
       return toCallToolResult(
         mcpFailure("agentfold_mcp", "unexpected_failure", [safeUnexpectedDiagnostic()]),
       );

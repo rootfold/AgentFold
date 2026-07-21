@@ -15,7 +15,7 @@
 
 The recommended lifecycle is open session, continue a matching active task or explicitly begin a requested new task, report meaningful progress, and close the session before returning control or switching agents. Reports contain concise engineering conclusions—not private chain of thought, secrets, full conversations, or terminal transcripts.
 
-One MCP process serves exactly one Git repository. The workspace is fixed at startup, tools cannot switch it, and normal results contain only repository-relative paths. AgentFold never stages, commits, resets, stashes, pushes, creates branches, edits hooks, or changes remotes.
+One MCP process serves exactly one Git repository. The workspace is resolved and locked before the first workspace-dependent tool call, tools cannot switch it, and normal results contain only repository-relative paths. AgentFold never stages, commits, resets, stashes, pushes, creates branches, edits hooks, or changes remotes.
 
 ## Run locally
 
@@ -34,6 +34,23 @@ pnpm agentfold mcp --workspace . --service disabled
 ```
 
 `auto` chooses the service only at startup and warns on stderr before embedded fallback. `required` is intended for future installed connectors. `disabled` preserves the original per-process in-memory session behavior. A lost service connection never triggers a mid-session fallback.
+
+Installed connectors can request a bounded service start before the MCP handshake:
+
+```bash
+agentfold mcp --service required --ensure-service --workspace-mode auto
+```
+
+`--ensure-service` is valid only with `auto` or `required`. It reuses a compatible service or invokes the existing local start operation and waits for readiness; it does not install an operating-system service or login startup item.
+
+Workspace modes are:
+
+- `fixed`: use an explicit `--workspace`, or the current directory for backward-compatible direct use.
+- `auto`: prefer exactly one valid initialized repository from client roots, then fall back to the current directory.
+- `roots`: require exactly one valid initialized repository from client `file://` roots.
+- `cwd`: resolve the initialized repository containing the process current directory.
+
+Client roots are treated only as discovery input. AgentFold decodes and validates file URIs, resolves real paths and Git roots, rejects ambiguity and paths outside the selected repository, and locks the first canonical repository for the process lifetime. A roots-change notification never silently switches the workspace.
 
 From a production build:
 
@@ -86,4 +103,4 @@ Do not assume either snippet matches a particular application without checking t
 
 ## Current limitations
 
-Service session metadata remains intentionally in memory and is lost on service restart. Shutdown does not create a report or checkpoint solely because the process is stopping. There is no watcher, HTTP transport, operating-system service installer, application configuration installer, or application-specific Antigravity, Codex, or IDE connector yet. Embedded mode still has per-process sessions and no cross-application automation.
+Service session metadata remains intentionally in memory and is lost on service restart. Shutdown does not create a report or checkpoint solely because the process is stopping. There is no watcher, HTTP transport, operating-system service installer, Codex connector, or generic IDE connector. The Antigravity connector is intentionally limited to local registration, an owned workspace rule, verification, and safe removal. Embedded mode still has per-process sessions and no cross-application automation.

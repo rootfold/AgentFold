@@ -202,4 +202,29 @@ pnpm agentfold mcp --workspace . --service required
 pnpm agentfold service stop
 ```
 
-See [Local MCP integration](integrations/mcp.md) for the tool lifecycle and [Shared local service](service.md) for runtime directories, authentication, leases, automatic switch checkpoints, recovery, and troubleshooting. No application-specific configuration is installed automatically.
+See [Local MCP integration](integrations/mcp.md) for the tool lifecycle and [Shared local service](service.md) for runtime directories, authentication, leases, automatic switch checkpoints, recovery, and troubleshooting. Running the MCP command alone does not install application-specific configuration.
+
+## Connect Google Antigravity
+
+Preview the detected Antigravity surface and every proposed change without writing:
+
+```bash
+pnpm agentfold connect antigravity
+pnpm agentfold connect antigravity --dry-run
+```
+
+Install the MCP registration and workspace continuity rule non-interactively, then verify the owned files and live protocol boundary:
+
+```bash
+pnpm agentfold connect antigravity --yes
+pnpm agentfold verify antigravity
+```
+
+Automatic discovery refuses ambiguous host configurations. Use `--surface desktop`, `ide`, `cli`, or `all` when an explicit choice is required. Disconnect is also a preview unless `--yes` is supplied:
+
+```bash
+pnpm agentfold disconnect antigravity
+pnpm agentfold disconnect antigravity --yes
+```
+
+The connector preserves unrelated and secret-bearing host configuration byte-for-byte, keeps restrictive backups outside the repository, and removes only content whose fingerprint still proves AgentFold ownership. It does not change Antigravity approval settings, install an operating-system service, stop the shared service during removal, or claim that the Antigravity UI has ingested the entry. See [Google Antigravity connector](integrations/antigravity.md) for discovery paths, workspace selection, manual refresh, safety, and recovery details.

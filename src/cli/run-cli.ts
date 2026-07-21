@@ -15,18 +15,23 @@ export type RunCliOptions = Partial<CreateProgramOptions>;
 
 function defaultOptions(options: RunCliOptions): CreateProgramOptions {
   const fileSystem = options.fileSystem ?? new NodeFileSystem();
+  const processRunner = options.processRunner ?? new NodeProcessRunner();
 
   return {
     fileSystem,
     gitRepositoryLocator:
       options.gitRepositoryLocator ?? new FilesystemGitRepositoryLocator(fileSystem),
-    gitInspector: options.gitInspector ?? new CommandGitInspector(new NodeProcessRunner()),
+    gitInspector: options.gitInspector ?? new CommandGitInspector(processRunner),
+    processRunner,
     stdinReader: options.stdinReader ?? new NodeStdinReader(),
     output: options.output ?? new NodeCliOutput(),
     ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.version === undefined ? {} : { version: options.version }),
     ...(options.runMcpServer === undefined ? {} : { runMcpServer: options.runMcpServer }),
     ...(options.runService === undefined ? {} : { runService: options.runService }),
+    ...(options.connectorOverrides === undefined
+      ? {}
+      : { connectorOverrides: options.connectorOverrides }),
   };
 }
 

@@ -35,8 +35,26 @@ describe("AgentFold CLI", () => {
     expect(captured.stdout()).toContain("report");
     expect(captured.stdout()).toContain("checkpoint");
     expect(captured.stdout()).toContain("mcp");
+    expect(captured.stdout()).toContain("connect");
+    expect(captured.stdout()).toContain("verify");
+    expect(captured.stdout()).toContain("disconnect");
     expect(captured.stderr()).toBe("");
   });
+
+  it.each(["connect", "verify", "disconnect"])(
+    "returns a focused validation error for an unknown %s host",
+    async (command) => {
+      const captured = captureOutput();
+      const exitCode = await runCli(["node", "agentfold", command, "codex"], {
+        output: captured.output,
+      });
+      expect(exitCode).toBe(2);
+      expect(captured.stdout()).toContain("Unsupported connector host: codex");
+      if (process.env.LOCALAPPDATA !== undefined) {
+        expect(`${captured.stdout()}${captured.stderr()}`).not.toContain(process.env.LOCALAPPDATA);
+      }
+    },
+  );
 
   it("registers MCP options without printing a normal CLI banner during server operation", async () => {
     const captured = captureOutput();

@@ -116,4 +116,4 @@ This milestone does not modify any host application's configuration.
 - Confirm `AGENTFOLD_RUNTIME_DIR` is not a symlink and is writable by the current user.
 - Confirm `.agentfold/config.yaml` and all five canonical context files are valid; session operations still use canonical validation.
 
-Current limitations: sessions and repository registrations are not persisted, there is no install/uninstall or login startup registration, there are no filesystem watchers, and no application-specific connector or IDE extension is included.
+Current limitations: sessions and repository registrations are not persisted, there is no operating-system service installation or login startup registration, and there are no filesystem watchers or IDE extensions. The Antigravity connector starts this service only through the existing bounded user process lifecycle.

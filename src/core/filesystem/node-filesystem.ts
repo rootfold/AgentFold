@@ -2,6 +2,7 @@ import {
   access,
   mkdir,
   link,
+  lstat,
   open,
   readdir,
   readFile,
@@ -61,6 +62,15 @@ export class NodeFileSystem implements FileSystem {
     }
   }
 
+  async isSymbolicLink(path: string): Promise<boolean> {
+    try {
+      return (await lstat(path)).isSymbolicLink();
+    } catch (error: unknown) {
+      if (isMissingPathError(error)) return false;
+      throw error;
+    }
+  }
+
   async listDirectory(path: string): Promise<readonly string[]> {
     return (await readdir(path)).sort((left, right) => left.localeCompare(right));
   }
@@ -73,6 +83,10 @@ export class NodeFileSystem implements FileSystem {
     return readFile(path, "utf8");
   }
 
+  readBytes(path: string): Promise<Uint8Array> {
+    return readFile(path);
+  }
+
   async writeText(path: string, content: string): Promise<void> {
     await writeFile(path, content, "utf8");
   }
@@ -82,6 +96,17 @@ export class NodeFileSystem implements FileSystem {
 
     try {
       await handle.writeFile(content, "utf8");
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+  }
+
+  async writeBytesAndFlush(path: string, content: Uint8Array): Promise<void> {
+    const handle = await open(path, "wx");
+
+    try {
+      await handle.writeFile(content);
       await handle.sync();
     } finally {
       await handle.close();

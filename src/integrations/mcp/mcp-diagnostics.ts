@@ -39,8 +39,9 @@ export function safeUnexpectedDiagnostic(): Diagnostic {
   };
 }
 
-export function safeDebugMessage(error: unknown, repositoryRoot: string): string {
+export function safeDebugMessage(error: unknown, repositoryRoot?: string): string {
   const message = error instanceof Error ? error.message : "Unknown failure";
+  if (repositoryRoot === undefined) return message;
   return (
     sanitizeMcpDiagnostics(
       [{ code: "AFMCP014", severity: "error", message }],

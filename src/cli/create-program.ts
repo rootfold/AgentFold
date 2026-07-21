@@ -3,6 +3,8 @@ import { Command } from "commander";
 import type { FileSystem } from "../core/filesystem/filesystem.js";
 import type { GitInspector } from "../core/git/git-inspector.js";
 import type { GitRepositoryLocator } from "../core/git/git-repository-locator.js";
+import type { ProcessRunner } from "../core/process/process-runner.js";
+import type { AntigravityConnectorDependencies } from "../integrations/connectors/antigravity/antigravity-connector.js";
 import { packageVersion } from "../package-metadata.js";
 import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
@@ -12,6 +14,9 @@ import { registerReportCommand } from "./commands/report.js";
 import { registerResumeCommand } from "./commands/resume.js";
 import { registerStartCommand } from "./commands/start.js";
 import { registerServiceCommand } from "./commands/service.js";
+import { registerConnectCommand } from "./commands/connect.js";
+import { registerDisconnectCommand } from "./commands/disconnect.js";
+import { registerVerifyCommand } from "./commands/verify.js";
 import type { StdinReader } from "./input/stdin-reader.js";
 import type { CliOutput } from "./output/cli-output.js";
 
@@ -19,12 +24,14 @@ export interface CreateProgramOptions {
   readonly fileSystem: FileSystem;
   readonly gitRepositoryLocator: GitRepositoryLocator;
   readonly gitInspector: GitInspector;
+  readonly processRunner: ProcessRunner;
   readonly stdinReader: StdinReader;
   readonly output: CliOutput;
   readonly now?: () => Date;
   readonly version?: string;
   readonly runMcpServer?: Parameters<typeof registerMcpCommand>[1]["runServer"];
   readonly runService?: Parameters<typeof registerServiceCommand>[1]["runService"];
+  readonly connectorOverrides?: Partial<AntigravityConnectorDependencies>;
 }
 
 export function createProgram(options: CreateProgramOptions): Command {
@@ -83,6 +90,16 @@ export function createProgram(options: CreateProgramOptions): Command {
     },
     options.output,
   );
+  const connectorDependencies: AntigravityConnectorDependencies = {
+    fileSystem: options.fileSystem,
+    gitRepositoryLocator: options.gitRepositoryLocator,
+    processRunner: options.processRunner,
+    version: options.version ?? packageVersion,
+    ...options.connectorOverrides,
+  };
+  registerConnectCommand(program, connectorDependencies, options.output);
+  registerVerifyCommand(program, connectorDependencies, options.output);
+  registerDisconnectCommand(program, connectorDependencies, options.output);
 
   return program;
 }

@@ -2,16 +2,25 @@ import process from "node:process";
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { RootsListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
 import type { GitInspector } from "../../core/git/git-inspector.js";
 import type { GitRepositoryLocator } from "../../core/git/git-repository-locator.js";
+import { createAgentFoldIntegrationOperations } from "../application/integration-operations.js";
 import { createAgentFoldMcpServer } from "./create-mcp-server.js";
+import { createLazyMcpOperations } from "./lazy-mcp-tools.js";
 import { createMcpApplicationContext, type McpStderrLogger } from "./mcp-context.js";
 import { InMemorySessionRegistry } from "./session-registry.js";
-import { connectAgentFoldServiceClient } from "../service/service-client.js";
+import {
+  connectAgentFoldServiceClient,
+  type ConnectServiceClientResult,
+} from "../service/service-client.js";
+import { startAgentFoldService } from "../service/service-lifecycle.js";
 import type { ServiceMode } from "../service/service-mode.js";
 import { createMcpServiceBridge } from "./service-bridge.js";
+import { workspaceModes, type WorkspaceMode } from "./workspace-mode.js";
+import { McpWorkspaceResolver } from "./workspace-resolver.js";
 
 type ShutdownSignal = "SIGINT" | "SIGTERM";
 
@@ -33,54 +42,77 @@ export interface RunMcpServerInput {
   readonly signalSource?: McpSignalSource;
   readonly transport?: Transport;
   readonly serviceMode?: ServiceMode;
+  readonly ensureService?: boolean;
+  readonly workspaceMode?: WorkspaceMode;
   readonly runtimeDirectory?: string;
   readonly connectServiceClient?: typeof connectAgentFoldServiceClient;
+  readonly startService?: typeof startAgentFoldService;
+}
+
+async function connectSharedService(input: RunMcpServerInput): Promise<ConnectServiceClientResult> {
+  const connect = input.connectServiceClient ?? connectAgentFoldServiceClient;
+  const clientInput = {
+    fileSystem: input.fileSystem,
+    clientVersion: input.version,
+    ...(input.runtimeDirectory === undefined ? {} : { runtimeDirectory: input.runtimeDirectory }),
+  };
+  let connected = await connect(clientInput);
+  if (connected.status !== "unavailable" || input.ensureService !== true) return connected;
+
+  const started = await (input.startService ?? startAgentFoldService)({
+    fileSystem: input.fileSystem,
+    version: input.version,
+    ...(input.runtimeDirectory === undefined ? {} : { runtimeDirectory: input.runtimeDirectory }),
+  });
+  for (const item of started.diagnostics) {
+    const message = `${item.code}: ${item.message}`;
+    if (item.severity === "error" || item.severity === "warning") input.logger.error(message);
+    else input.logger.debug(message);
+  }
+  if (started.exitCode !== 0) return connected;
+  connected = await connect(clientInput);
+  return connected;
 }
 
 export async function runMcpServer(input: RunMcpServerInput): Promise<number> {
+  const serviceMode = input.serviceMode ?? "auto";
+  if (input.ensureService === true && serviceMode === "disabled") {
+    input.logger.error("AFSV033: --ensure-service cannot be used with disabled service mode.");
+    return 2;
+  }
+  const requestedMode = input.workspace === undefined ? (input.workspaceMode ?? "fixed") : "fixed";
+  if (!workspaceModes.includes(requestedMode)) return 2;
   const now = input.now ?? (() => new Date());
   const sessions = new InMemorySessionRegistry({
     now,
     ...(input.generateSessionId === undefined ? {} : { generateId: input.generateSessionId }),
   });
-  const resolved = await createMcpApplicationContext({
+  const resolver = new McpWorkspaceResolver({
+    mode: requestedMode,
     ...(input.workspace === undefined ? {} : { workspace: input.workspace }),
-    version: input.version,
     fileSystem: input.fileSystem,
     gitRepositoryLocator: input.gitRepositoryLocator,
-    gitInspector: input.gitInspector,
-    sessions,
-    now,
-    debug: input.debug ?? false,
-    logger: input.logger,
   });
-  if (resolved.status === "error") {
-    for (const diagnostic of resolved.diagnostics) {
-      input.logger.error(`${diagnostic.code}: ${diagnostic.message}`);
-    }
-    return 6;
-  }
-
-  const serviceMode = input.serviceMode ?? "auto";
-  let bridge: ReturnType<typeof createMcpServiceBridge> | undefined;
-  if (serviceMode !== "disabled") {
-    const connected = await (input.connectServiceClient ?? connectAgentFoldServiceClient)({
-      fileSystem: input.fileSystem,
-      clientVersion: input.version,
-      ...(input.runtimeDirectory === undefined ? {} : { runtimeDirectory: input.runtimeDirectory }),
-    });
-    if (connected.status === "connected") {
-      for (const diagnostic of connected.diagnostics) {
+  if (requestedMode === "fixed" || requestedMode === "cwd") {
+    const initialResolution = await resolver.resolve();
+    if (initialResolution.status === "error") {
+      for (const diagnostic of initialResolution.diagnostics) {
         input.logger.error(`${diagnostic.code}: ${diagnostic.message}`);
       }
-      bridge = createMcpServiceBridge({
-        workspace: resolved.context.repositoryRoot,
-        client: connected.client,
-        logger: input.logger,
-      });
+      return 6;
+    }
+  }
+
+  let serviceConnection: ConnectServiceClientResult | undefined;
+  if (serviceMode !== "disabled") {
+    serviceConnection = await connectSharedService(input);
+    if (serviceConnection.status === "connected") {
+      for (const diagnostic of serviceConnection.diagnostics) {
+        input.logger.error(`${diagnostic.code}: ${diagnostic.message}`);
+      }
       input.logger.debug("MCP tools are delegated to the shared AgentFold service.");
     } else if (serviceMode === "required") {
-      for (const diagnostic of connected.diagnostics) {
+      for (const diagnostic of serviceConnection.diagnostics) {
         input.logger.error(`${diagnostic.code}: ${diagnostic.message}`);
       }
       input.logger.error("AFSV032: The required shared AgentFold service is unavailable.");
@@ -92,9 +124,57 @@ export async function runMcpServer(input: RunMcpServerInput): Promise<number> {
     }
   }
 
+  const lazy = createLazyMcpOperations({
+    resolver,
+    create: async (repositoryRoot) => {
+      const resolved = await createMcpApplicationContext({
+        workspace: repositoryRoot,
+        version: input.version,
+        fileSystem: input.fileSystem,
+        gitRepositoryLocator: input.gitRepositoryLocator,
+        gitInspector: input.gitInspector,
+        sessions,
+        now,
+        debug: input.debug ?? false,
+        logger: input.logger,
+      });
+      if (resolved.status === "error") throw new Error("MCP workspace context failed validation.");
+      if (serviceConnection?.status === "connected") {
+        const bridge = createMcpServiceBridge({
+          workspace: repositoryRoot,
+          client: serviceConnection.client,
+          logger: input.logger,
+        });
+        return { handlers: bridge.handlers, shutdown: () => bridge.shutdown() };
+      }
+      return {
+        handlers: createAgentFoldIntegrationOperations(resolved.context),
+        shutdown: () => Promise.resolve(),
+      };
+    },
+  });
   const server = createAgentFoldMcpServer({
-    context: resolved.context,
-    ...(bridge === undefined ? {} : { handlers: bridge.handlers }),
+    version: input.version,
+    logger: input.logger,
+    handlers: lazy.handlers,
+    repositoryRoot: () => resolver.lockedRepositoryRoot,
+  });
+  resolver.setRootsProvider(async () => {
+    if (server.server.getClientCapabilities()?.roots === undefined) return { supported: false };
+    const listed = await server.server.listRoots(undefined, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    return {
+      supported: true,
+      roots: listed.roots.map((root) => ({
+        uri: root.uri,
+        ...(root.name === undefined ? {} : { name: root.name }),
+      })),
+    };
+  });
+  server.server.setNotificationHandler(RootsListChangedNotificationSchema, async () => {
+    const warning = await resolver.inspectRootsAfterLock();
+    if (warning !== undefined) input.logger.error(`${warning.code}: ${warning.message}`);
   });
   const transport = input.transport ?? new StdioServerTransport();
   const signalSource = input.signalSource ?? process;
@@ -104,11 +184,10 @@ export async function runMcpServer(input: RunMcpServerInput): Promise<number> {
     resolveClosed = resolve;
   });
   server.server.onclose = () => {
-    if (bridge === undefined) {
-      resolveClosed?.();
-      return;
-    }
-    void bridge.shutdown().finally(() => resolveClosed?.());
+    void lazy
+      .shutdown()
+      .catch(() => input.logger.error("AFMCP015: MCP shutdown did not complete cleanly."))
+      .finally(() => resolveClosed?.());
   };
   server.server.onerror = (error) => {
     input.logger.debug(`Transport warning: ${error.message}`);
@@ -118,7 +197,7 @@ export async function runMcpServer(input: RunMcpServerInput): Promise<number> {
     shuttingDown = true;
     input.logger.debug(`Shutting down after ${reason}.`);
     try {
-      await bridge?.shutdown();
+      await lazy.shutdown();
       await server.close();
     } catch {
       input.logger.error("AFMCP015: MCP shutdown did not complete cleanly.");

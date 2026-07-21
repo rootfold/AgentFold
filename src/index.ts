@@ -103,3 +103,13 @@ export type {
   AgentFoldServiceSessionState,
   SafeAgentFoldServiceStatus,
 } from "./integrations/service/service-types.js";
+export { connectorHosts, connectorHostSchema } from "./integrations/connectors/connector-types.js";
+export type {
+  ConnectorActionPlan,
+  ConnectorHost,
+  ConnectorOwnershipSummary,
+  ConnectorVerificationResult,
+  LaunchDescriptor,
+} from "./integrations/connectors/connector-types.js";
+export { workspaceModes, workspaceModeSchema } from "./integrations/mcp/workspace-mode.js";
+export type { WorkspaceMode } from "./integrations/mcp/workspace-mode.js";

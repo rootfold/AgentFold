@@ -73,6 +73,10 @@ class FailingWriteFileSystem implements FileSystem {
     return this.delegate.entryType(path_);
   }
 
+  isSymbolicLink(path_: string): Promise<boolean> {
+    return this.delegate.isSymbolicLink?.(path_) ?? Promise.resolve(false);
+  }
+
   listDirectory(path_: string): Promise<readonly string[]> {
     return this.delegate.listDirectory(path_);
   }
@@ -83,6 +87,10 @@ class FailingWriteFileSystem implements FileSystem {
 
   readText(path_: string): Promise<string> {
     return this.delegate.readText(path_);
+  }
+
+  readBytes(path_: string): Promise<Uint8Array> {
+    return this.delegate.readBytes(path_);
   }
 
   writeText(path_: string, content: string): Promise<void> {
@@ -97,6 +105,13 @@ class FailingWriteFileSystem implements FileSystem {
       return Promise.reject(new Error("Simulated write failure"));
     }
     return this.delegate.writeTextAndFlush(path_, content);
+  }
+
+  writeBytesAndFlush(path_: string, content: Uint8Array): Promise<void> {
+    if (path_.endsWith(this.failingSuffix)) {
+      return Promise.reject(new Error("Simulated write failure"));
+    }
+    return this.delegate.writeBytesAndFlush(path_, content);
   }
 
   ensureDirectory(path_: string): Promise<void> {
