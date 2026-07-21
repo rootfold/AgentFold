@@ -1,6 +1,6 @@
 {
-  "name": "agentfold",
-  "version": "0.0.0",
+  "name": "@rootfold/agentfold",
+  "version": "0.1.0",
   "description": "A local-first CLI for portable coding-agent context.",
   "type": "module",
   "bin": {
@@ -44,6 +44,14 @@
   ],
   "author": "RootFold",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rootfold/AgentFold.git"
+  },
+  "homepage": "https://github.com/rootfold/AgentFold#readme",
+  "bugs": {
+    "url": "https://github.com/rootfold/AgentFold/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "commander": "^14.0.2",

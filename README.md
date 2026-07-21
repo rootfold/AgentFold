@@ -20,11 +20,11 @@ Current work state       ──> compact checkpoints and handoff packets
 ```
 
 ```bash
-npx agentfold init
-npx agentfold sync
-npx agentfold start "Add GitHub OAuth"
-npx agentfold checkpoint --agent antigravity
-npx agentfold resume --for codex
+npx @rootfold/agentfold init
+npx @rootfold/agentfold sync
+npx @rootfold/agentfold start "Add GitHub OAuth"
+npx @rootfold/agentfold checkpoint --agent antigravity
+npx @rootfold/agentfold resume --for codex
 ```
 
 No paid model is required. No cloud account is required. The core workflow is deterministic and runs locally.
@@ -271,7 +271,7 @@ resets, stashes, or changes branches through these MCP tools.
 ### Initialize AgentFold
 
 ```bash
-npx agentfold init
+npx @rootfold/agentfold init
 ```
 
 `init` should:
@@ -289,7 +289,7 @@ npx agentfold init
 ### Generate agent instructions
 
 ```bash
-npx agentfold sync
+npx @rootfold/agentfold sync
 ```
 
 Example output:
@@ -312,7 +312,7 @@ Estimated shared context: 1,142 tokens
 ### Start a task
 
 ```bash
-npx agentfold start "Implement GitHub OAuth"
+npx @rootfold/agentfold start "Implement GitHub OAuth"
 ```
 
 This creates or resets:
@@ -324,7 +324,7 @@ This creates or resets:
 ### Save progress before switching agents
 
 ```bash
-npx agentfold checkpoint --agent antigravity
+npx @rootfold/agentfold checkpoint --agent antigravity
 ```
 
 `checkpoint` gathers safe Git metadata and requests a concise work summary. It records:
@@ -344,7 +344,7 @@ It must not store the full diff by default.
 ### Continue with another agent
 
 ```bash
-npx agentfold resume --for codex
+npx @rootfold/agentfold resume --for codex
 ```
 
 Example output:
@@ -1472,9 +1472,7 @@ Before `1.0.0`, configuration and CLI behavior may change. Breaking changes must
 
 ## License
 
-AgentFold is intended to be released under the **MIT License**.
-
-A `LICENSE` file must be added before the first public release.
+AgentFold is released under the **MIT License**. See [LICENSE](LICENSE).
 
 ---
 
