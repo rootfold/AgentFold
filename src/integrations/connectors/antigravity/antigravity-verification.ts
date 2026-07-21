@@ -1,9 +1,4 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { ListRootsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 import type { Diagnostic } from "../../../core/diagnostics/diagnostic.js";
 import type { FileSystem } from "../../../core/filesystem/filesystem.js";
@@ -15,6 +10,7 @@ import {
   type ServicePlatformInput,
 } from "../../service/runtime-directory.js";
 import type { ConnectorVerificationResult, LaunchDescriptor } from "../connector-types.js";
+import { launchAgentFoldMcpWithOfficialClient } from "../mcp-launch-verification.js";
 import {
   ConnectorOwnershipStore,
   connectorConfigIdentity,
@@ -26,7 +22,6 @@ import { antigravityConfigCandidateDefinitions } from "./antigravity-paths.js";
 import { fingerprintJsonValue, readAntigravityAgentFoldEntry } from "./antigravity-config.js";
 import { antigravityMcpEntrySchema } from "./antigravity-launch-entry.js";
 import { antigravityRuleRelativePath, fingerprintAntigravityRule } from "./antigravity-rule.js";
-import { agentFoldMcpToolNames } from "../../mcp/tool-names.js";
 import {
   validateAntigravityHostConfigPath,
   validateAntigravityRuleBoundary,
@@ -66,58 +61,18 @@ function diagnostic(
   return { code, severity, message, ...(suggestion === undefined ? {} : { suggestion }) };
 }
 
-function filteredEnvironment(
-  environment: Readonly<Record<string, string | undefined>>,
-): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(environment).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
-    ),
-  );
-}
-
 async function launchWithOfficialClient(
   descriptor: LaunchDescriptor,
   repositoryRoot: string,
   environment: Readonly<Record<string, string | undefined>>,
 ): Promise<AntigravityMcpLaunchVerification> {
-  const transport = new StdioClientTransport({
-    command: descriptor.command,
-    args: [
-      ...descriptor.argsPrefix,
-      "mcp",
-      "--service",
-      "required",
-      "--ensure-service",
-      "--workspace-mode",
-      "auto",
-    ],
-    cwd: repositoryRoot,
-    env: filteredEnvironment(environment),
-    stderr: "pipe",
+  const result = await launchAgentFoldMcpWithOfficialClient({
+    descriptor,
+    repositoryRoot,
+    environment,
+    clientName: "agentfold-antigravity-verifier",
   });
-  const client = new Client(
-    { name: "agentfold-antigravity-verifier", version: "1.0.0" },
-    { capabilities: { roots: { listChanged: true } } },
-  );
-  client.setRequestHandler(ListRootsRequestSchema, () => ({
-    roots: [{ uri: pathToFileURL(repositoryRoot).toString(), name: "AgentFold workspace" }],
-  }));
-  try {
-    await client.connect(transport, { signal: AbortSignal.timeout(10_000) });
-    const listed = await client.listTools(undefined, { signal: AbortSignal.timeout(10_000) });
-    const names = listed.tools.map((tool) => tool.name).sort();
-    const expected = Object.values(agentFoldMcpToolNames).sort();
-    if (JSON.stringify(names) !== JSON.stringify(expected)) {
-      throw new Error("The configured MCP server did not expose all AgentFold lifecycle tools.");
-    }
-    await client.callTool({ name: agentFoldMcpToolNames.getStatus, arguments: {} }, undefined, {
-      signal: AbortSignal.timeout(10_000),
-    });
-    return { toolsAvailable: names.length };
-  } finally {
-    await client.close().catch(() => undefined);
-  }
+  return { toolsAvailable: result.toolsAvailable };
 }
 
 function invalidResult(

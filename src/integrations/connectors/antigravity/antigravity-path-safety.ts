@@ -2,6 +2,10 @@ import path from "node:path";
 
 import { isPathInside } from "../../../core/context/path-boundary.js";
 import type { FileSystem } from "../../../core/filesystem/filesystem.js";
+import {
+  validateConnectorHostPath,
+  validateConnectorStateBoundary as validateSharedConnectorStateBoundary,
+} from "../connector-path-safety.js";
 
 export async function validateAntigravityRuleBoundary(
   fileSystem: FileSystem,
@@ -29,20 +33,7 @@ export async function validateAntigravityHostConfigPath(
   fileSystem: FileSystem,
   candidatePath: string,
 ): Promise<void> {
-  let inspected = candidatePath;
-  while (true) {
-    if (await fileSystem.exists(inspected)) {
-      if (fileSystem.isSymbolicLink === undefined) {
-        throw new Error("Symbolic-link inspection is unavailable for the configuration target.");
-      }
-      if (await fileSystem.isSymbolicLink(inspected)) {
-        throw new Error("An Antigravity configuration target resolves through a symbolic link.");
-      }
-    }
-    const parent = path.dirname(inspected);
-    if (parent === inspected) return;
-    inspected = parent;
-  }
+  await validateConnectorHostPath(fileSystem, candidatePath);
 }
 
 export async function validateConnectorStateBoundary(
@@ -50,15 +41,5 @@ export async function validateConnectorStateBoundary(
   repositoryRoot: string,
   stateDirectory: string,
 ): Promise<void> {
-  if (isPathInside(repositoryRoot, stateDirectory)) {
-    throw new Error("Connector state cannot be stored in the repository.");
-  }
-  await validateAntigravityHostConfigPath(fileSystem, stateDirectory);
-  if (await fileSystem.exists(stateDirectory)) {
-    const realRepository = await fileSystem.realPath(repositoryRoot);
-    const realState = await fileSystem.realPath(stateDirectory);
-    if (isPathInside(realRepository, realState)) {
-      throw new Error("Connector state resolves inside the repository.");
-    }
-  }
+  await validateSharedConnectorStateBoundary(fileSystem, repositoryRoot, stateDirectory);
 }

@@ -200,7 +200,8 @@ AgentFold does not need access to an agent's private conversation. Instead, it s
 The currently implemented workflow is documented in
 [docs/getting-started.md](docs/getting-started.md), including the local stdio
 [MCP integration](docs/integrations/mcp.md), [shared local service](docs/service.md),
-and [Google Antigravity connector](docs/integrations/antigravity.md).
+[Google Antigravity connector](docs/integrations/antigravity.md), and
+[Codex connector](docs/integrations/codex.md).
 
 ### Initialize AgentFold
 

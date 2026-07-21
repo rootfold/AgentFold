@@ -2,14 +2,21 @@ import { z } from "zod";
 
 import type { Diagnostic } from "../../core/diagnostics/diagnostic.js";
 
-export const connectorHosts = ["antigravity"] as const;
+export const connectorHosts = ["antigravity", "codex"] as const;
 export const connectorHostSchema = z.enum(connectorHosts);
 export type ConnectorHost = z.infer<typeof connectorHostSchema>;
 
-export const connectorSurfaces = ["auto", "desktop", "ide", "cli", "all"] as const;
+export const connectorSurfaces = ["auto", "desktop", "ide", "cli", "app", "all"] as const;
 export const connectorSurfaceSchema = z.enum(connectorSurfaces);
 export type ConnectorSurface = z.infer<typeof connectorSurfaceSchema>;
 export type ConcreteConnectorSurface = Exclude<ConnectorSurface, "auto" | "all">;
+export type AntigravityConnectorSurface = Exclude<ConnectorSurface, "app">;
+export type AntigravityConcreteConnectorSurface = Exclude<
+  AntigravityConnectorSurface,
+  "auto" | "all"
+>;
+export type CodexConnectorSurface = Exclude<ConnectorSurface, "desktop">;
+export type CodexConcreteConnectorSurface = Exclude<CodexConnectorSurface, "auto" | "all">;
 
 export interface LaunchDescriptor {
   readonly command: string;
@@ -24,8 +31,11 @@ export interface ConnectorPlannedAction {
     | "create_backup"
     | "create_rule"
     | "update_rule"
+    | "create_instructions"
+    | "update_instructions"
     | "remove_entry"
     | "remove_rule"
+    | "remove_instructions"
     | "write_ownership";
   readonly target: string;
   readonly description: string;

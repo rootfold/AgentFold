@@ -45,11 +45,11 @@ describe("AgentFold CLI", () => {
     "returns a focused validation error for an unknown %s host",
     async (command) => {
       const captured = captureOutput();
-      const exitCode = await runCli(["node", "agentfold", command, "codex"], {
+      const exitCode = await runCli(["node", "agentfold", command, "unsupported"], {
         output: captured.output,
       });
       expect(exitCode).toBe(2);
-      expect(captured.stdout()).toContain("Unsupported connector host: codex");
+      expect(captured.stdout()).toContain("Unsupported connector host: unsupported");
       if (process.env.LOCALAPPDATA !== undefined) {
         expect(`${captured.stdout()}${captured.stderr()}`).not.toContain(process.env.LOCALAPPDATA);
       }

@@ -14,6 +14,15 @@ export class NodeProcessRunner implements ProcessRunner {
         [...arguments_],
         {
           cwd: options.cwd,
+          ...(options.environment === undefined
+            ? {}
+            : {
+                env: Object.fromEntries(
+                  Object.entries(options.environment).filter(
+                    (entry): entry is [string, string] => entry[1] !== undefined,
+                  ),
+                ),
+              }),
           encoding: "utf8",
           maxBuffer: 1024 * 1024,
           windowsHide: true,

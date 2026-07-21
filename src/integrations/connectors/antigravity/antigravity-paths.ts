@@ -1,12 +1,12 @@
 import path from "node:path";
 
-import type { ConcreteConnectorSurface } from "../connector-types.js";
+import type { AntigravityConcreteConnectorSurface } from "../connector-types.js";
 import type { ServicePlatformInput } from "../../service/runtime-directory.js";
 
 export interface AntigravityConfigCandidateDefinition {
   readonly id: "central" | "cli-transition" | "workspace";
   readonly scope: "global" | "workspace";
-  readonly surfaces: readonly ConcreteConnectorSurface[];
+  readonly surfaces: readonly AntigravityConcreteConnectorSurface[];
   readonly path: string;
   readonly rank: number;
   readonly documentationUrl: string;
@@ -59,7 +59,7 @@ export function antigravityConfigCandidateDefinitions(
 }
 
 export interface AntigravityExecutableCandidate {
-  readonly surface: ConcreteConnectorSurface;
+  readonly surface: AntigravityConcreteConnectorSurface;
   readonly path: string;
 }
 

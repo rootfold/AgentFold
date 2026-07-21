@@ -60,7 +60,7 @@ describe("MCP dynamic workspace resolution", () => {
     );
     const result = await resolver.resolve();
     expect(result).toMatchObject({ status: "resolved", source: "roots" });
-    expect(resolver.lockedRepositoryRoot).toBe(fixture.root);
+    expect(resolver.lockedRepositoryRoot).toBe(await fixture.fileSystem.realPath(fixture.root));
   });
 
   it("rejects multiple initialized root repositories without guessing", async () => {
@@ -158,7 +158,7 @@ describe("MCP dynamic workspace resolution", () => {
     );
     expect(await linked.resolve()).toMatchObject({
       status: "resolved",
-      repositoryRoot: fixture.root,
+      repositoryRoot: await fixture.fileSystem.realPath(fixture.root),
     });
 
     const outside = await mkdtemp(path.join(os.tmpdir(), "agentfold cwd outside "));
@@ -186,7 +186,9 @@ describe("MCP dynamic workspace resolution", () => {
     );
     await resolver.resolve();
     selected = second.root;
-    expect(await resolver.resolve()).toMatchObject({ repositoryRoot: first.root });
+    expect(await resolver.resolve()).toMatchObject({
+      repositoryRoot: await first.fileSystem.realPath(first.root),
+    });
     expect(await resolver.inspectRootsAfterLock()).toMatchObject({ code: "AFMCP021" });
   });
 

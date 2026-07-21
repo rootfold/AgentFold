@@ -5,7 +5,10 @@ import { z } from "zod";
 
 import { AtomicTextFileWriter } from "../../core/filesystem/atomic-text-file-writer.js";
 import type { FileSystem } from "../../core/filesystem/filesystem.js";
-import type { ConcreteConnectorSurface, ConnectorOwnershipSummary } from "./connector-types.js";
+import type {
+  AntigravityConcreteConnectorSurface,
+  ConnectorOwnershipSummary,
+} from "./connector-types.js";
 
 const surfaceRecordSchema = z
   .object({
@@ -150,7 +153,7 @@ export function summarizeConnectorOwnership(
 }
 
 export function surfaceRecord(
-  surface: ConcreteConnectorSurface,
+  surface: AntigravityConcreteConnectorSurface,
   configIdentity: string,
   entryFingerprint: string,
   backupIdentity?: string,

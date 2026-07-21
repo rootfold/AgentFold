@@ -1,5 +1,6 @@
 export interface ProcessRunOptions {
   readonly cwd: string;
+  readonly environment?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface ProcessResult {

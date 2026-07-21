@@ -100,6 +100,24 @@ function samePath(left: string, right: string, platform: NodeJS.Platform): boole
   return normalize(left) === normalize(right);
 }
 
+async function hasSymbolicLinkComponent(
+  fileSystem: FileSystem,
+  directory: string,
+  platform: NodeJS.Platform,
+): Promise<boolean | undefined> {
+  if (fileSystem.isSymbolicLink === undefined) return undefined;
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
+  const resolved = platformPath.resolve(directory);
+  const parsed = platformPath.parse(resolved);
+  let current = parsed.root;
+  const relative = resolved.slice(parsed.root.length);
+  for (const component of relative.split(/[\\/]+/u).filter((item) => item.length > 0)) {
+    current = platformPath.join(current, component);
+    if (await fileSystem.isSymbolicLink(current)) return true;
+  }
+  return false;
+}
+
 async function defaultRestrictDirectory(directory: string): Promise<void> {
   if (process.platform !== "win32") {
     const { chmod } = await import("node:fs/promises");
@@ -114,7 +132,16 @@ export async function prepareServiceRuntimeDirectory(
   const location = resolveServiceRuntimeLocation(platform, input.runtimeDirectory);
   await input.fileSystem.ensureDirectory(location.directory);
   const realDirectory = await input.fileSystem.realPath(location.directory);
-  if (!samePath(location.directory, realDirectory, platform.platform)) {
+  const hasSymbolicLink = await hasSymbolicLinkComponent(
+    input.fileSystem,
+    location.directory,
+    platform.platform,
+  );
+  if (
+    hasSymbolicLink === true ||
+    (hasSymbolicLink === undefined &&
+      !samePath(location.directory, realDirectory, platform.platform))
+  ) {
     throw new Error("The AgentFold runtime directory resolves through a symbolic link.");
   }
   await (input.restrictDirectory ?? defaultRestrictDirectory)(realDirectory);

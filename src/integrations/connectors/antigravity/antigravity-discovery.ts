@@ -2,7 +2,7 @@ import path from "node:path";
 
 import type { Diagnostic } from "../../../core/diagnostics/diagnostic.js";
 import type { FileSystem } from "../../../core/filesystem/filesystem.js";
-import type { ConcreteConnectorSurface, ConnectorSurface } from "../connector-types.js";
+import type { AntigravityConcreteConnectorSurface, ConnectorSurface } from "../connector-types.js";
 import type { ServicePlatformInput } from "../../service/runtime-directory.js";
 import {
   antigravityConfigCandidateDefinitions,
@@ -16,7 +16,7 @@ export interface AntigravityConfigCandidate extends AntigravityConfigCandidateDe
 }
 
 export interface AntigravitySurfaceDiscovery {
-  readonly surface: ConcreteConnectorSurface;
+  readonly surface: AntigravityConcreteConnectorSurface;
   readonly installed: boolean | "unknown";
   readonly configCandidates: readonly AntigravityConfigCandidate[];
   readonly selectedConfig?: AntigravityConfigCandidate;
@@ -46,7 +46,7 @@ export async function discoverAntigravity(
       parentExists: await input.fileSystem.exists(path.dirname(candidate.path)),
     })),
   );
-  const executableEvidence = new Set<ConcreteConnectorSurface>();
+  const executableEvidence = new Set<AntigravityConcreteConnectorSurface>();
   for (const executable of antigravityExecutableCandidates(input.platform)) {
     if (await input.fileSystem.exists(executable.path)) executableEvidence.add(executable.surface);
   }
@@ -75,7 +75,7 @@ export type AntigravityTargetSelection =
       readonly status: "selected";
       readonly targets: readonly {
         readonly candidate: AntigravityConfigCandidate;
-        readonly surfaces: readonly ConcreteConnectorSurface[];
+        readonly surfaces: readonly AntigravityConcreteConnectorSurface[];
       }[];
       readonly diagnostics: readonly Diagnostic[];
     }
@@ -88,20 +88,20 @@ export type AntigravityTargetSelection =
 function uniqueTargets(
   targets: readonly {
     readonly candidate: AntigravityConfigCandidate;
-    readonly surface: ConcreteConnectorSurface;
+    readonly surface: AntigravityConcreteConnectorSurface;
   }[],
 ): readonly {
   readonly candidate: AntigravityConfigCandidate;
-  readonly surfaces: readonly ConcreteConnectorSurface[];
+  readonly surfaces: readonly AntigravityConcreteConnectorSurface[];
 }[] {
   const byPath = new Map<
     string,
-    { candidate: AntigravityConfigCandidate; surfaces: Set<ConcreteConnectorSurface> }
+    { candidate: AntigravityConfigCandidate; surfaces: Set<AntigravityConcreteConnectorSurface> }
   >();
   for (const target of targets) {
     const existing = byPath.get(target.candidate.path) ?? {
       candidate: target.candidate,
-      surfaces: new Set<ConcreteConnectorSurface>(),
+      surfaces: new Set<AntigravityConcreteConnectorSurface>(),
     };
     existing.surfaces.add(target.surface);
     byPath.set(target.candidate.path, existing);
@@ -114,7 +114,7 @@ function uniqueTargets(
 
 function selectedForSurface(
   discovery: AntigravityDiscovery,
-  surface: ConcreteConnectorSurface,
+  surface: AntigravityConcreteConnectorSurface,
 ): AntigravityConfigCandidate | "ambiguous" | undefined {
   const current = discovery.surfaces.find((item) => item.surface === surface)!;
   const existing = current.configCandidates.filter((candidate) => candidate.exists);
@@ -144,9 +144,25 @@ export function selectAntigravityTargets(
       },
     ],
   });
+  if (requested === "app") {
+    return {
+      status: "error",
+      exitCode: 5,
+      diagnostics: [
+        {
+          code: "AFCN002",
+          severity: "error",
+          message: "Antigravity does not use the Codex `app` surface name.",
+          suggestion: "Select auto, desktop, ide, cli, or all.",
+        },
+      ],
+    };
+  }
   if (requested === "all") {
-    const targets: { candidate: AntigravityConfigCandidate; surface: ConcreteConnectorSurface }[] =
-      [];
+    const targets: {
+      candidate: AntigravityConfigCandidate;
+      surface: AntigravityConcreteConnectorSurface;
+    }[] = [];
     for (const surface of discovery.surfaces.filter((item) => item.installed === true)) {
       const selected = selectedForSurface(discovery, surface.surface);
       if (selected === "ambiguous") {

@@ -5,6 +5,7 @@ import type { GitInspector } from "../core/git/git-inspector.js";
 import type { GitRepositoryLocator } from "../core/git/git-repository-locator.js";
 import type { ProcessRunner } from "../core/process/process-runner.js";
 import type { AntigravityConnectorDependencies } from "../integrations/connectors/antigravity/antigravity-connector.js";
+import type { CodexConnectorDependencies } from "../integrations/connectors/codex/codex-connector.js";
 import { packageVersion } from "../package-metadata.js";
 import { registerCheckpointCommand } from "./commands/checkpoint.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
@@ -32,6 +33,7 @@ export interface CreateProgramOptions {
   readonly runMcpServer?: Parameters<typeof registerMcpCommand>[1]["runServer"];
   readonly runService?: Parameters<typeof registerServiceCommand>[1]["runService"];
   readonly connectorOverrides?: Partial<AntigravityConnectorDependencies>;
+  readonly codexConnectorOverrides?: Partial<CodexConnectorDependencies>;
 }
 
 export function createProgram(options: CreateProgramOptions): Command {
@@ -97,9 +99,20 @@ export function createProgram(options: CreateProgramOptions): Command {
     version: options.version ?? packageVersion,
     ...options.connectorOverrides,
   };
-  registerConnectCommand(program, connectorDependencies, options.output);
-  registerVerifyCommand(program, connectorDependencies, options.output);
-  registerDisconnectCommand(program, connectorDependencies, options.output);
+  const codexConnectorDependencies: CodexConnectorDependencies = {
+    fileSystem: options.fileSystem,
+    gitRepositoryLocator: options.gitRepositoryLocator,
+    processRunner: options.processRunner,
+    version: options.version ?? packageVersion,
+    ...options.codexConnectorOverrides,
+  };
+  const connectorCommands = {
+    antigravity: connectorDependencies,
+    codex: codexConnectorDependencies,
+  };
+  registerConnectCommand(program, connectorCommands, options.output);
+  registerVerifyCommand(program, connectorCommands, options.output);
+  registerDisconnectCommand(program, connectorCommands, options.output);
 
   return program;
 }

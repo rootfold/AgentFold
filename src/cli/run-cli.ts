@@ -32,6 +32,9 @@ function defaultOptions(options: RunCliOptions): CreateProgramOptions {
     ...(options.connectorOverrides === undefined
       ? {}
       : { connectorOverrides: options.connectorOverrides }),
+    ...(options.codexConnectorOverrides === undefined
+      ? {}
+      : { codexConnectorOverrides: options.codexConnectorOverrides }),
   };
 }
 

@@ -228,3 +228,25 @@ pnpm agentfold disconnect antigravity --yes
 ```
 
 The connector preserves unrelated and secret-bearing host configuration byte-for-byte, keeps restrictive backups outside the repository, and removes only content whose fingerprint still proves AgentFold ownership. It does not change Antigravity approval settings, install an operating-system service, stop the shared service during removal, or claim that the Antigravity UI has ingested the entry. See [Google Antigravity connector](integrations/antigravity.md) for discovery paths, workspace selection, manual refresh, safety, and recovery details.
+
+## Connect Codex
+
+Preview the shared Codex configuration and repository instruction changes, then install only after review:
+
+```bash
+pnpm agentfold connect codex
+pnpm agentfold connect codex --dry-run
+pnpm agentfold connect codex --surface all --yes
+pnpm agentfold verify codex
+```
+
+Supported surfaces are `auto`, `cli`, `ide`, `app`, and `all`. CLI, IDE, and desktop app share one user-level `config.toml`; each connected Git worktree keeps a separate root `AGENTS.md` managed region. Restart Codex or its IDE extension after installation and confirm `agentfold` is enabled under MCP servers.
+
+Disconnect remains a preview unless `--yes` is supplied:
+
+```bash
+pnpm agentfold disconnect codex
+pnpm agentfold disconnect codex --yes
+```
+
+The connector preserves unrelated TOML and `AGENTS.md` content, stores exact config backups outside the repository, retains the global entry while another repository depends on it, and leaves the shared service running. It installs no skill, plugin, hook, IDE extension, OS service, telemetry, or network integration. See [Codex connector](integrations/codex.md) for ownership, worktrees, refresh steps, and limitations.
