@@ -41,7 +41,8 @@ When AgentFold returns a continuation packet, follow its next actions, preserve 
 `;
 
 export function fingerprintAntigravityRule(content: string): string {
-  return createHash("sha256").update(content, "utf8").digest("hex");
+  const portableContent = content.replace(/\r\n?/gu, "\n");
+  return createHash("sha256").update(portableContent, "utf8").digest("hex");
 }
 
 export type AntigravityRulePlan =

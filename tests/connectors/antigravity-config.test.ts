@@ -166,6 +166,11 @@ describe("Antigravity continuity rule", () => {
     expect(prepareAntigravityRule(antigravityContinuityRule)).toMatchObject({
       action: "identical",
     });
+    const crlfRule = antigravityContinuityRule.replace(/\n/gu, "\r\n");
+    expect(fingerprintAntigravityRule(crlfRule)).toBe(
+      fingerprintAntigravityRule(antigravityContinuityRule),
+    );
+    expect(prepareAntigravityRule(crlfRule)).toMatchObject({ action: "identical" });
     const previous = `${previousAntigravityRuleOwnershipMarker}\n# Previous owned rule\n`;
     expect(prepareAntigravityRule(previous, [fingerprintAntigravityRule(previous)])).toMatchObject({
       action: "update",

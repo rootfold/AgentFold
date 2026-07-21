@@ -50,6 +50,8 @@ URIs, real paths, Git roots, initialization, and duplicates are validated. Sever
 
 The connector owns only `.agents/rules/agentfold-continuity.md`. The deterministic rule tells Antigravity to open a session before substantive changes, continue a relevant active task, begin work only when appropriate, and report meaningful milestones. It uses `agentfold_finish_task` for fully completed and validated scope, while paused, incomplete, blocked, uncertain, or handed-off work uses `agentfold_close_session` with checkpointing.
 
+Rule ownership fingerprints treat LF, CRLF, and legacy CR line endings equivalently. This keeps reconnect and verification deterministic when Git checks out text files with platform-native line endings, while any content change remains a collision that AgentFold will not overwrite.
+
 It distinguishes implementation, modifying debugging, refactoring, tests, documentation, and architecture from conceptual questions, explanations, read-only inspection, status requests, non-project chat, and trivial formatting help. It prohibits hidden reasoning, conversation capture, source contents, environment values, secrets, automatic commits, pushes, and discarding uncommitted work.
 
 ## Preservation, backups, and ownership

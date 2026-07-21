@@ -258,6 +258,46 @@ describe("Antigravity connector operations", () => {
     expect(alreadyDisconnected).toMatchObject({ safe: true, actions: [] });
   });
 
+  it("accepts a Git-normalized CRLF continuity rule across reconnect and verification", async () => {
+    const fixture = await fixtureWithHostConfig();
+    const dependencies = connectorDependencies(
+      fixture.repository.root,
+      fixture.home,
+      fixture.stateDirectory,
+    );
+    const plan = await prepareAntigravityConnection(dependencies, "ide");
+    if (!plan.safe) throw new Error("Expected connector plan");
+    await applyAntigravityConnection(plan, dependencies);
+
+    const rulePath = path.join(
+      fixture.repository.root,
+      ".agents",
+      "rules",
+      "agentfold-continuity.md",
+    );
+    await writeFile(rulePath, antigravityContinuityRule.replace(/\n/gu, "\r\n"), "utf8");
+
+    const reconnect = await prepareAntigravityConnection(dependencies, "ide");
+    expect(reconnect.safe).toBe(true);
+    if (!reconnect.safe) return;
+    expect(reconnect.rulePlan.action).toBe("identical");
+    expect(reconnect.actions).toHaveLength(0);
+
+    const verification = await verifyAntigravityConnection({
+      fileSystem: dependencies.fileSystem,
+      gitRepositoryLocator: dependencies.gitRepositoryLocator,
+      version: dependencies.version,
+      platform: dependencies.platform!,
+      stateDirectory: fixture.stateDirectory,
+      startDirectory: fixture.repository.root,
+      resolveDescriptor: () => Promise.resolve(testDescriptor),
+      launchMcp: () => Promise.resolve({ toolsAvailable: 9 }),
+    });
+    expect(verification.valid).toBe(false);
+    expect(verification.diagnostics.some((item) => item.code === "AFCN027")).toBe(false);
+    expect(verification.diagnostics.some((item) => item.code === "AFCN028")).toBe(true);
+  });
+
   it("shares the global entry across repositories and disconnects only proven content", async () => {
     const fixture = await fixtureWithHostConfig();
     const firstDependencies = connectorDependencies(
