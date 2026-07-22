@@ -17,7 +17,10 @@ import {
   prepareAntigravityDisconnect,
 } from "../../src/integrations/connectors/antigravity/antigravity-disconnect.js";
 import { readAntigravityAgentFoldEntry } from "../../src/integrations/connectors/antigravity/antigravity-config.js";
-import { antigravityContinuityRule } from "../../src/integrations/connectors/antigravity/antigravity-rule.js";
+import {
+  antigravityContinuityRule,
+  previousAntigravityContinuityRule,
+} from "../../src/integrations/connectors/antigravity/antigravity-rule.js";
 import { verifyAntigravityConnection } from "../../src/integrations/connectors/antigravity/antigravity-verification.js";
 import { ConnectorOwnershipStore } from "../../src/integrations/connectors/ownership-store.js";
 import { createContinuityFixture } from "../helpers/continuity-fixture.js";
@@ -216,6 +219,37 @@ describe("Antigravity connector operations", () => {
       expect(secondPlan.actions).toHaveLength(0);
       expect(secondPlan.ownershipNeedsUpdate).toBe(false);
     }
+  });
+
+  it("upgrades an exact tracked legacy rule without machine-local ownership", async () => {
+    const fixture = await fixtureWithHostConfig();
+    const dependencies = connectorDependencies(
+      fixture.repository.root,
+      fixture.home,
+      fixture.stateDirectory,
+    );
+    const rulePath = path.join(
+      fixture.repository.root,
+      ".agents",
+      "rules",
+      "agentfold-continuity.md",
+    );
+    await mkdir(path.dirname(rulePath), { recursive: true });
+    await writeFile(rulePath, previousAntigravityContinuityRule.replace(/\n/gu, "\r\n"), "utf8");
+
+    const plan = await prepareAntigravityConnection(dependencies, "ide");
+    expect(plan.safe).toBe(true);
+    if (!plan.safe) return;
+    expect(plan.rulePlan.action).toBe("update");
+    expect(plan.actions.some((item) => item.kind === "update_rule")).toBe(true);
+
+    expect((await applyAntigravityConnection(plan, dependencies)).exitCode).toBe(0);
+    await expect(readFile(rulePath, "utf8")).resolves.toBe(antigravityContinuityRule);
+    const ownership = await new ConnectorOwnershipStore(
+      dependencies.fileSystem,
+      fixture.stateDirectory,
+    ).read();
+    expect(ownership?.workspaces).toHaveLength(1);
   });
 
   it("preserves exact multi-surface dependencies and backup ownership on reconnect", async () => {

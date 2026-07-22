@@ -15,6 +15,7 @@ import {
   antigravityRuleOwnershipMarker,
   fingerprintAntigravityRule,
   prepareAntigravityRule,
+  previousAntigravityContinuityRule,
   previousAntigravityRuleOwnershipMarker,
 } from "../../src/integrations/connectors/antigravity/antigravity-rule.js";
 
@@ -171,6 +172,13 @@ describe("Antigravity continuity rule", () => {
       fingerprintAntigravityRule(antigravityContinuityRule),
     );
     expect(prepareAntigravityRule(crlfRule)).toMatchObject({ action: "identical" });
+    for (const legacy of [
+      previousAntigravityContinuityRule,
+      previousAntigravityContinuityRule.replace(/\n/gu, "\r\n"),
+      previousAntigravityContinuityRule.replace(/\n/gu, "\r"),
+    ]) {
+      expect(prepareAntigravityRule(legacy)).toMatchObject({ action: "update" });
+    }
     const previous = `${previousAntigravityRuleOwnershipMarker}\n# Previous owned rule\n`;
     expect(prepareAntigravityRule(previous, [fingerprintAntigravityRule(previous)])).toMatchObject({
       action: "update",
@@ -182,5 +190,13 @@ describe("Antigravity continuity rule", () => {
     expect(prepareAntigravityRule(`${antigravityRuleOwnershipMarker}\n# modified\n`).status).toBe(
       "collision",
     );
+    expect(
+      prepareAntigravityRule(
+        previousAntigravityContinuityRule.replace(
+          "Never discard uncommitted work",
+          "Discard uncommitted work",
+        ),
+      ).status,
+    ).toBe("collision");
   });
 });
