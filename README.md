@@ -19,9 +19,14 @@ Stable project knowledge ──> generated instructions for each agent
 Current work state       ──> compact checkpoints and handoff packets
 ```
 
+## Install using node package manager
+
+```bash
+npm install --global @rootfold/agentfold
+```
+
 ```bash
 npx @rootfold/agentfold init
-npx @rootfold/agentfold sync
 npx @rootfold/agentfold start "Add GitHub OAuth"
 npx @rootfold/agentfold checkpoint --agent antigravity
 npx @rootfold/agentfold resume --for codex
